@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Գրանցում · Cardiotonus</title>
+  <meta name="description" content="Գրանցվեք Cardiotonus բժշկական կենտրոնի վաղվա այցելությանը։">
+  <meta name="theme-color" content="#0c0c0e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cardiotonus">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="icon" href="/images/logo.png">
+  <link rel="apple-touch-icon" href="/images/logo.png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/">
+        <img src="/images/logo.png" alt="" width="48" height="48">
+        <span>cardiotonus</span>
+      </a>
+      <nav class="site-nav">
+        <button type="button" id="show-book" hidden>Գրանցում</button>
+        <button type="button" id="show-mine">Իմ գրանցումը</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container booking-layout" id="booking-view">
+      <section class="booking-intro">
+        <p class="eyebrow">Հաջորդ օրվա այց</p>
+        <h1>Գրանցվել ընդունելության</h1>
+        <p class="lead">Տեղը ամրագրվում է միայն վաղվա աշխատանքային օրվա համար։ Մեկ հեռախոսահամարով կարելի է ունենալ միայն մեկ գրանցում։ Հեռախոսին կգա քառանիշ կոդ, և գրանցումը կհաստատվի միայն այդ կոդը լրացնելուց հետո։</p>
+        <p id="demo-banner" class="demo-banner" hidden></p>
+        <div class="date-banner">
+          <span>Ամսաթիվ</span>
+          <strong id="booking-date">Բեռնվում է…</strong>
+          <em id="booking-count"></em>
+        </div>
+        <div class="legend">
+          <span><i class="swatch free"></i>Ազատ</span>
+          <span><i class="swatch busy"></i>Զբաղված</span>
+          <span><i class="swatch picked"></i>Ընտրված</span>
+        </div>
+        <div id="slot-grid" class="slot-grid" role="listbox" aria-label="Ազատ ժամեր"></div>
+        <p id="slots-message" class="form-error" hidden></p>
+      </section>
+
+      <section class="booking-card" id="booking-card">
+        <form id="booking-form">
+          <h2>Ձեր տվյալները</h2>
+          <label>
+            Անուն
+            <input id="firstName" name="firstName" autocomplete="given-name" maxlength="40" required>
+          </label>
+          <label>
+            Ազգանուն
+            <input id="lastName" name="lastName" autocomplete="family-name" maxlength="40" required>
+          </label>
+          <label>
+            Հեռախոսահամար
+            <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" enterkeyhint="done" placeholder="098 00 00 00" required>
+          </label>
+          <p class="chosen" id="chosen-time">Ժամը դեռ ընտրված չէ</p>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <button class="button button-full" id="submit-booking" type="submit" disabled>Ստանալ կոդը</button>
+        </form>
+        <form id="code-form" hidden>
+          <h2>Հաստատման կոդ</h2>
+          <p class="lead">Հեռախոսին ուղարկված քառանիշ թիվը գրեք այստեղ։ Գրանցումը կհաստատվի միայն դրանից հետո։</p>
+          <label>
+            Կոդ
+            <input id="sms-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" enterkeyhint="done" maxlength="4" pattern="[0-9]*" placeholder="0000" required>
+          </label>
+          <p id="code-error" class="form-error" role="alert" hidden></p>
+          <button class="button button-full" type="submit">Հաստատել գրանցումը</button>
+          <button class="button button-ghost button-full" id="resend-code" type="button">Նոր կոդ ուղարկել</button>
+        </form>
+        <div id="booking-success" class="success" hidden>
+          <p class="eyebrow">Հաստատված է</p>
+          <h2>Այցը գրանցված է</h2>
+          <p id="success-copy"></p>
+          <a class="button" href="/">Նոր գրանցում</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="container mine-layout" id="mine-view" hidden>
+      <section class="booking-card mine-card">
+        <form id="mine-phone-form">
+          <p class="eyebrow">Իմ գրանցումը</p>
+          <h1>Գտնել ամրագրումը</h1>
+          <p class="lead">Գրեք այն հեռախոսահամարը, որով գրանցվել եք։ Եթե գրանցում կա, կարող եք չեղարկել կամ ընտրել այլ ազատ ժամ։</p>
+          <label>
+            Հեռախոսահամար
+            <input id="mine-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" enterkeyhint="search" placeholder="098 00 00 00" required>
+          </label>
+          <p id="mine-phone-error" class="form-error" role="alert" hidden></p>
+          <button class="button button-full" type="submit">Ստուգել</button>
+        </form>
+        <div id="mine-result" hidden>
+          <p id="mine-empty" class="lead" hidden>Այս հեռախոսահամարով գրանցում չկա։</p>
+          <div id="mine-card" hidden>
+            <p class="eyebrow">Գրանցումը գտնվել է</p>
+            <h2 id="mine-who"></h2>
+            <p id="mine-when" class="lead"></p>
+            <button class="button button-ghost" id="mine-cancel" type="button">Չեղարկել գրանցումը</button>
+            <h2>Այլ ազատ ժամ</h2>
+            <div id="mine-slots" class="slot-grid"></div>
+            <p id="mine-action-error" class="form-error" role="alert" hidden></p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <img src="/images/logo.png" alt="" width="64" height="64">
+        <div>
+          <strong>Cardiotonus</strong>
+          <p>Գյումրի, Գարեգին Նժդեհ 5/8</p>
+        </div>
+      </div>
+      <p>Չեղարկելու կամ ժամը փոխելու համար բացեք «Իմ գրանցումը»։</p>
+    </div>
+  </footer>
+  <script src="/js/book.js"></script>
+</body>
+</html>

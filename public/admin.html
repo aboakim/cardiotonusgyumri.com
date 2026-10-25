@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="robots" content="noindex">
+  <title>Ադմին վահանակ · Cardiotonus</title>
+  <meta name="theme-color" content="#0c0c0e">
+  <link rel="icon" href="/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/">
+        <img src="/images/logo.png" alt="" width="48" height="48">
+        <span>cardiotonus</span>
+      </a>
+      <nav class="site-nav">
+        <a href="/">Գրանցում</a>
+        <a href="/admin" aria-current="page">Ադմին</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container admin-wrap">
+      <section id="login-card" class="booking-card login-card">
+        <form id="login-form">
+          <p class="eyebrow">Անձնակազմ</p>
+          <h1>Ադմին վահանակ</h1>
+          <p class="lead">Այստեղից կարելի է տեսնել օրվա գրանցումները, ավելացնել տեղ և չեղարկել։</p>
+          <label>
+            Գաղտնաբառ
+            <input id="password" type="password" autocomplete="current-password" required>
+          </label>
+          <p id="login-error" class="form-error" role="alert" hidden></p>
+          <button class="button button-full" type="submit">Մուտք</button>
+        </form>
+      </section>
+
+      <section id="dashboard" class="dashboard" hidden>
+        <div class="dashboard-head">
+          <div>
+            <p class="eyebrow">Գրանցվածներ</p>
+            <h1 id="dash-title">Այցելություններ</h1>
+            <p id="dash-count" class="lead"></p>
+          </div>
+          <div class="dash-actions">
+            <label class="date-label">
+              Օր
+              <input id="admin-date" type="date">
+            </label>
+            <label class="date-label">
+              Փնտրել
+              <input id="admin-search" type="search" placeholder="Անուն կամ ազգանուն">
+            </label>
+            <button id="show-all" class="button button-light" type="button">Բոլորը</button>
+            <button id="logout" class="button button-ghost" type="button">Ելք</button>
+          </div>
+        </div>
+        <div class="admin-grid">
+          <div>
+            <div class="table-wrap" id="schedule-wrap"></div>
+            <p id="empty-state" class="empty" hidden>Այս օրվա համար գրանցում չկա։</p>
+          </div>
+          <form id="staff-form" class="booking-card staff-form">
+            <h2>Ավելացնել գրանցում</h2>
+            <p class="lead" id="staff-note">Ընտրեք ազատ ժամը և լրացրեք տվյալները։</p>
+            <label>
+              Ժամ
+              <select id="staff-time" name="time" required></select>
+            </label>
+            <label>
+              Անուն
+              <input id="staff-first" name="firstName" maxlength="40" required>
+            </label>
+            <label>
+              Ազգանուն
+              <input id="staff-last" name="lastName" maxlength="40" required>
+            </label>
+            <label>
+              Հեռախոս
+              <input id="staff-phone" name="phone" type="tel" placeholder="098 00 00 00" required>
+            </label>
+            <p id="staff-error" class="form-error" role="alert" hidden></p>
+            <button class="button button-full" type="submit">Գրանցել</button>
+          </form>
+        </div>
+        <p id="admin-error" class="form-error" role="alert" hidden></p>
+      </section>
+    </div>
+  </main>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

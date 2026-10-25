@@ -1,0 +1,20 @@
+{
+  "name": "Cardiotonus գրանցում",
+  "short_name": "Cardiotonus",
+  "description": "Cardiotonus բժշկական կենտրոնի այցի գրանցում",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f7fb",
+  "theme_color": "#0c0c0e",
+  "lang": "hy",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

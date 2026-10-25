@@ -1,0 +1,13 @@
+{
+  "name": "cardiotonus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cardiotonus բժշկական կենտրոնի այցերի գրանցման կայք",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2"
+  }
+}
