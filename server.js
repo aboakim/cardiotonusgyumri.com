@@ -24,6 +24,7 @@ const COPY = {
     needFirstName: "Գրեք անունը։",
     needLastName: "Գրեք ազգանունը։",
     needPhone: "Գրեք հայաստանյան բջջային համար։",
+    badPhone: "Այս հեռախոսահամարով հնարավոր չէ գրանցվել։",
     opensLater: "Հաջորդ օրվա գրանցումը բացվում է ժամը {time}-ին։",
     onlyTomorrow: "Գրանցումը բաց է միայն հաջորդ օրվա համար։ Թարմացրեք էջը։",
     tomorrowOff: "Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է։",
@@ -57,6 +58,7 @@ const COPY = {
     needFirstName: "Введите имя.",
     needLastName: "Введите фамилию.",
     needPhone: "Введите армянский мобильный номер.",
+    badPhone: "С таким номером телефона записаться нельзя.",
     opensLater: "Запись на следующий день открывается в {time}.",
     onlyTomorrow: "Запись открыта только на следующий день. Обновите страницу.",
     tomorrowOff: "Завтра нерабочий день. Приём с понедельника по пятницу.",
@@ -341,12 +343,18 @@ function nextWorkingDate(startOffset = 0) {
   return calendarDate(startOffset);
 }
 
+const MOBILE_PREFIXES = new Set(["33", "43", "41", "44", "55", "77", "88", "91", "93", "94", "95", "96", "97", "98", "99"]);
+
 function phoneKey(value) {
   let digits = String(value || "").replace(/\D/g, "");
   if (digits.startsWith("00374")) digits = digits.slice(5);
   if (digits.startsWith("374")) digits = digits.slice(3);
   if (digits.startsWith("0")) digits = digits.slice(1);
   return digits.length === 8 ? digits : null;
+}
+
+function allowedMobile(key) {
+  return MOBILE_PREFIXES.has(String(key || "").slice(0, 2));
 }
 
 function personFields(body, lang) {
@@ -362,6 +370,9 @@ function personFields(body, lang) {
   }
   if (!key) {
     return { error: { status: 400, body: { error: text(lang, "needPhone"), field: "phone" } } };
+  }
+  if (!allowedMobile(key)) {
+    return { error: { status: 400, body: { error: text(lang, "badPhone"), field: "phone" } } };
   }
   return { firstName, lastName, phone, phoneKey: key };
 }
