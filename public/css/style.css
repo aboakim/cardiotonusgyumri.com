@@ -377,6 +377,12 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.03em; }
 .footer-brand img { border-radius: 50%; background: var(--white); }
 .footer-brand p, .footer-grid p { margin: 0; }
 .footer-brand strong { color: var(--white); font-size: 18px; }
+.address-link {
+  color: var(--white);
+  text-underline-offset: 3px;
+  display: inline-block;
+  padding: 6px 0;
+}
 .site-footer a { color: var(--white); font-weight: 700; }
 
 .page {
