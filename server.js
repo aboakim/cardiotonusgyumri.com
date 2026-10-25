@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
 
 // Ադմինի գաղտնաբառը։ Կարող եք փոխել այս տողը կամ ADMIN_PASSWORD միջավայրը։
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Cardiotonus@930";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "cardiotonus1";
 const PORT = Number(process.env.PORT) || 3000;
 const TZ = "Asia/Yerevan";
 const DATA_PATH = path.join(__dirname, "data", "appointments.json");
@@ -71,7 +71,11 @@ function calendarDate(offset = 0) {
   return utc.toISOString().slice(0, 10);
 }
 
-const BOOKING_OPEN_HOUR = 21;
+const BOOKING_OPEN_HOUR = 19;
+
+function bookingOpenLabel() {
+  return `${String(BOOKING_OPEN_HOUR).padStart(2, "0")}:00`;
+}
 
 function yerevanHour() {
   const hour = new Intl.DateTimeFormat("en-GB", {
@@ -413,7 +417,7 @@ function bookingRules(body) {
   const time = String(body.time || "");
   const date = String(body.date || "");
   if (!bookingWindowOpen()) {
-    return { error: { status: 409, body: { error: "Հաջորդ օրվա գրանցումը բացվում է ժամը 21:00-ին։" } } };
+    return { error: { status: 409, body: { error: `Հաջորդ օրվա գրանցումը բացվում է ժամը ${bookingOpenLabel()}-ին։` } } };
   }
   if (date !== tomorrow) {
     return { error: { status: 409, body: { error: "Գրանցումը բաց է միայն հաջորդ օրվա համար։ Թարմացրեք էջը։" } } };
@@ -661,12 +665,12 @@ app.get("/api/slots", async (req, res) => {
     date,
     dateLabel: formatHy(date),
     open,
-    opensAt: open || !working ? "" : "21:00",
+    opensAt: open || !working ? "" : bookingOpenLabel(),
     closedMessage: open
       ? ""
       : working
-        ? "Հաջորդ օրվա գրանցումը բացվում է այսօր ժամը 21:00-ին։"
-        : "Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է, իսկ գրանցումը բացվում է նախորդ օրը ժամը 21:00-ին։",
+        ? `Հաջորդ օրվա գրանցումը բացվում է այսօր ժամը ${bookingOpenLabel()}-ին։`
+        : `Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է, իսկ գրանցումը բացվում է նախորդ օրը ժամը ${bookingOpenLabel()}-ին։`,
     capacity: SLOTS.length,
     booked: open ? taken.size : 0,
     slots: open ? SLOTS.map((time) => ({ time, taken: taken.has(time) })) : [],
