@@ -361,7 +361,46 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.03em; }
 .footer-brand strong { color: var(--white); font-size: 18px; }
 .site-footer a { color: var(--white); font-weight: 700; }
 
-.page { background: var(--paper); min-height: calc(100vh - var(--header)); padding: 42px 0 70px; }
+.page {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - var(--header));
+  padding: 42px 0 70px;
+  background:
+    radial-gradient(ellipse 560px 460px at 100% 0%, rgba(212, 23, 44, 0.09), transparent 68%),
+    radial-gradient(ellipse 720px 520px at 0% 100%, rgba(143, 197, 235, 0.55), transparent 70%),
+    linear-gradient(180deg, #f8fbff 0%, #f4f7fb 55%, #eef4fb 100%);
+  overflow: hidden;
+}
+.page::before,
+.page::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+.page::before {
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(212, 23, 44, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 23, 44, 0.045) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 78%);
+}
+.page::after {
+  right: -40px;
+  top: 18px;
+  width: min(460px, 70vw);
+  height: min(420px, 62vw);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 220' fill='none'%3E%3Cpath d='M120 196C120 196 28 138 28 78C28 44 54 24 82 24C98 24 112 34 120 50C128 34 142 24 158 24C186 24 212 44 212 78C212 138 120 196 120 196Z' stroke='%231c3e8a' stroke-width='3' opacity='.22'/%3E%3Cpath d='M36 112H74L88 112L102 68L122 156L140 96L154 112H206' stroke='%23d4172c' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' opacity='.7'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.page > * { position: relative; z-index: 1; }
+.ecg-line {
+  height: 54px;
+  margin: 8px 0 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 80' preserveAspectRatio='none'%3E%3Cpath d='M0 42H150L190 42L214 14L238 70L262 42H470L508 42L532 12L558 72L582 42H820L858 42L882 16L906 68L930 42H1200' fill='none' stroke='%23d4172c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  opacity: 0.85;
+}
 .booking-layout, .admin-wrap { display: grid; gap: 28px; }
 .booking-layout { grid-template-columns: 1.15fr 0.85fr; align-items: start; }
 .booking-layout > *, .hero-inner > *, .panel-grid > *, .about-grid > *, .rule-grid > * { min-width: 0; }
@@ -543,6 +582,7 @@ td { font-weight: 700; color: var(--ink); }
   .booking-card { position: static; }
   .footer-grid, .dashboard-head { display: grid; }
   .page { padding: 24px 0 48px; }
+  .page::after { width: 210px; height: 190px; top: 8px; right: -28px; }
   .booking-intro h1 { font-size: clamp(32px, 9vw, 44px); }
   .legend { flex-wrap: wrap; }
 }
