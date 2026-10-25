@@ -71,6 +71,21 @@ function calendarDate(offset = 0) {
   return utc.toISOString().slice(0, 10);
 }
 
+const BOOKING_OPEN_HOUR = 21;
+
+function yerevanHour() {
+  const hour = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ,
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
+  return Number(hour);
+}
+
+function bookingWindowOpen() {
+  return yerevanHour() >= BOOKING_OPEN_HOUR;
+}
+
 function isWorkingDay(iso) {
   const [year, month, day] = iso.split("-").map(Number);
   const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
@@ -366,6 +381,9 @@ function bookingRules(body) {
   const tomorrow = calendarDate(1);
   const time = String(body.time || "");
   const date = String(body.date || "");
+  if (!bookingWindowOpen()) {
+    return { error: { status: 409, body: { error: "Հաջորդ օրվա գրանցումը բացվում է ժամը 21:00-ին։" } } };
+  }
   if (date !== tomorrow) {
     return { error: { status: 409, body: { error: "Գրանցումը բաց է միայն հաջորդ օրվա համար։ Թարմացրեք էջը։" } } };
   }
@@ -594,11 +612,12 @@ app.use((req, res, next) => {
 
 app.get("/api/slots", async (req, res) => {
   const date = calendarDate(1);
-  const open = isWorkingDay(date);
+  const working = isWorkingDay(date);
+  const open = working && bookingWindowOpen();
   const data = await readData();
   const taken = busyTimes(data, date);
   let preview = null;
-  if (!open) {
+  if (!working) {
     const previewDate = nextWorkingDate(0);
     const previewTaken = busyTimes(data, previewDate);
     preview = {
@@ -611,9 +630,12 @@ app.get("/api/slots", async (req, res) => {
     date,
     dateLabel: formatHy(date),
     open,
+    opensAt: open || !working ? "" : "21:00",
     closedMessage: open
       ? ""
-      : "Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է, իսկ գրանցումը բաց է միայն նախորդ օրը։",
+      : working
+        ? "Հաջորդ օրվա գրանցումը բացվում է այսօր ժամը 21:00-ին։"
+        : "Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է, իսկ գրանցումը բացվում է նախորդ օրը ժամը 21:00-ին։",
     capacity: SLOTS.length,
     booked: open ? taken.size : 0,
     slots: open ? SLOTS.map((time) => ({ time, taken: taken.has(time) })) : [],

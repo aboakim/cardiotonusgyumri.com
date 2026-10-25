@@ -79,7 +79,7 @@ function renderSlots() {
     demoBanner.textContent = `Դեմո։ վաղը՝ ${schedule.dateLabel}, գրանցել հնարավոր չէ։ Ներքևում ${schedule.preview.dateLabel} օրվա օրինակն է. զբաղված ժամերը փակ են։`;
   }
   if (!schedule.open && !previewOnly) {
-    countNode.textContent = "Ընդունելություն չկա";
+    countNode.textContent = schedule.opensAt ? `Կբացվի ժամը ${schedule.opensAt}-ին` : "Ընդունելություն չկա";
     legend.hidden = true;
     grid.hidden = true;
     bookingCard.hidden = true;
@@ -338,3 +338,7 @@ loadSlots().catch(() => {
   dateNode.textContent = "Չհաջողվեց բեռնել";
   showError(slotsMessage, "Ժամերը չբեռնվեցին։ Թարմացրեք էջը։");
 });
+
+setInterval(() => {
+  if (schedule && schedule.opensAt) loadSlots().catch(() => {});
+}, 30000);
