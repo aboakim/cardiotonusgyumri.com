@@ -343,7 +343,7 @@ function nextWorkingDate(startOffset = 0) {
   return calendarDate(startOffset);
 }
 
-const MOBILE_PREFIXES = new Set(["33", "43", "41", "44", "55", "77", "88", "91", "93", "94", "95", "96", "97", "98", "99"]);
+const MOBILE_PREFIXES = new Set(["33", "41", "43", "44", "55", "77", "91", "93", "94", "95", "96", "97", "98", "99"]);
 
 function phoneKey(value) {
   let digits = String(value || "").replace(/\D/g, "");
