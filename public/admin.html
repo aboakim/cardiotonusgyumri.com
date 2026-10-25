@@ -35,7 +35,21 @@
           <p class="lead">Այստեղից կարելի է տեսնել օրվա գրանցումները, ավելացնել տեղ և չեղարկել։ Ամեն գրանցում պահվում է 1 ամիս, հետո ինքնըստինքյան վերանում է։</p>
           <label>
             Գաղտնաբառ
-            <input id="password" type="password" autocomplete="current-password" required>
+            <span class="password-field">
+              <input id="password" type="password" autocomplete="current-password" required>
+              <button type="button" id="toggle-password" aria-label="Ցույց տալ գաղտնաբառը" aria-pressed="false">
+                <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-shut" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                  <path d="M3 3l18 18"></path>
+                  <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-4.1 4.8"></path>
+                  <path d="M6.1 6.1C3.5 8 2 12 2 12s3.5 7 10 7a10.8 10.8 0 0 0 4.2-.8"></path>
+                  <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path>
+                </svg>
+              </button>
+            </span>
           </label>
           <p id="login-error" class="form-error" role="alert" hidden></p>
           <button class="button button-full" type="submit">Մուտք</button>

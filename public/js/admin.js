@@ -1,3 +1,15 @@
+const passwordInput = document.querySelector("#password");
+const togglePassword = document.querySelector("#toggle-password");
+togglePassword.addEventListener("click", () => {
+  const visible = passwordInput.type === "password";
+  passwordInput.type = visible ? "text" : "password";
+  togglePassword.setAttribute("aria-pressed", visible ? "true" : "false");
+  togglePassword.setAttribute("aria-label", visible ? "Թաքցնել գաղտնաբառը" : "Ցույց տալ գաղտնաբառը");
+  togglePassword.querySelector(".eye-open").hidden = visible;
+  togglePassword.querySelector(".eye-shut").hidden = !visible;
+  passwordInput.focus();
+});
+
 const loginCard = document.querySelector("#login-card");
 const loginForm = document.querySelector("#login-form");
 const loginError = document.querySelector("#login-error");
