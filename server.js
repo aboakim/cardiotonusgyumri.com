@@ -265,8 +265,25 @@ function busyTimes(data, date) {
   return times;
 }
 
-function bookingForPhone(data, key) {
-  return data.appointments.find((item) => phoneKey(item.phone) === key) || null;
+function yerevanDay(iso) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+}
+
+function bookedToday(data, key) {
+  const today = calendarDate(0);
+  return data.appointments.some((item) => phoneKey(item.phone) === key && item.createdAt && yerevanDay(item.createdAt) === today);
+}
+
+function upcomingForPhone(data, key) {
+  const today = calendarDate(0);
+  return data.appointments
+    .filter((item) => phoneKey(item.phone) === key && item.date >= today)
+    .sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)))[0] || null;
 }
 
 function publicMine(item) {
@@ -368,11 +385,11 @@ async function startBooking(body) {
   if (checked.error) return checked.error;
   const { tomorrow, time, person } = checked;
   const data = await readData();
-  if (bookingForPhone(data, person.phoneKey)) {
+  if (bookedToday(data, person.phoneKey)) {
     return {
       status: 409,
       body: {
-        error: "Այս հեռախոսահամարով արդեն գրանցում կա։ Բացեք «Իմ գրանցումը»՝ չեղարկելու կամ ժամը փոխելու համար։",
+        error: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։ Կեսգիշերից հետո կարող եք գրանցվել նորից։ Բացեք «Իմ գրանցումը»՝ չեղարկելու կամ ժամը փոխելու համար։",
         field: "phone",
       },
     };
@@ -415,10 +432,10 @@ async function confirmBooking(body) {
     await writeData(data);
     return { status: 400, body: { error: "Կոդը սխալ է։", field: "code" } };
   }
-  if (bookingForPhone(data, person.phoneKey)) {
+  if (bookedToday(data, person.phoneKey)) {
     delete data.pending[person.phoneKey];
     await writeData(data);
-    return { status: 409, body: { error: "Այս հեռախոսահամարով արդեն գրանցում կա։", field: "phone" } };
+    return { status: 409, body: { error: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։", field: "phone" } };
   }
   if (data.appointments.some((item) => item.date === hold.date && item.time === hold.time)) {
     delete data.pending[person.phoneKey];
@@ -450,7 +467,7 @@ async function findMine(body) {
   const checked = minePhone(body);
   if (checked.error) return checked.error;
   const data = await readData();
-  const item = bookingForPhone(data, checked.key);
+  const item = upcomingForPhone(data, checked.key);
   if (!item) return { status: 200, body: { found: false } };
   return {
     status: 200,
@@ -462,11 +479,9 @@ async function cancelMine(body) {
   const checked = minePhone(body);
   if (checked.error) return checked.error;
   const data = await readData();
-  const next = data.appointments.filter((item) => phoneKey(item.phone) !== checked.key);
-  if (next.length === data.appointments.length) {
-    return { status: 404, body: { error: "Այս համարով գրանցում չկա։" } };
-  }
-  data.appointments = next;
+  const item = upcomingForPhone(data, checked.key);
+  if (!item) return { status: 404, body: { error: "Այս համարով գրանցում չկա։" } };
+  data.appointments = data.appointments.filter((entry) => entry.id !== item.id);
   await writeData(data);
   return { status: 200, body: { ok: true } };
 }
@@ -479,7 +494,7 @@ async function moveMine(body) {
     return { status: 400, body: { error: "Ընտրեք ազատ ժամը։", field: "time" } };
   }
   const data = await readData();
-  const item = bookingForPhone(data, checked.key);
+  const item = upcomingForPhone(data, checked.key);
   if (!item) return { status: 404, body: { error: "Այս համարով գրանցում չկա։" } };
   const taken = data.appointments.some((entry) => entry !== item && entry.date === item.date && entry.time === time);
   if (taken) return { status: 409, body: { error: "Այդ ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։" } };
@@ -506,10 +521,10 @@ async function createStaffBooking(body) {
   const person = personFields(body);
   if (person.error) return person.error;
   const data = await readData();
-  if (bookingForPhone(data, person.phoneKey)) {
+  if (bookedToday(data, person.phoneKey)) {
     return {
       status: 409,
-      body: { error: "Այս հեռախոսահամարով արդեն գրանցում կա։", field: "phone" },
+      body: { error: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։ Կեսգիշերից հետո կարող եք գրանցվել նորից։", field: "phone" },
     };
   }
   const taken = data.appointments.some((item) => item.date === date && item.time === time);
