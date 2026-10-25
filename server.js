@@ -54,10 +54,9 @@ const SLOTS = [
 ];
 
 const NAME_RE = /^[\p{L}][\p{L}\s'’-]{1,39}$/u;
-const sessions = new Map();
 const bookingHits = new Map();
-const pending = new Map();
 const CODE_TTL_MS = 10 * 60 * 1000;
+const DATA_KEY = "cardiotonus:data";
 let writeChain = Promise.resolve();
 
 function calendarDate(offset = 0) {
@@ -97,15 +96,54 @@ function formatStamp(iso) {
   }).format(new Date(iso));
 }
 
-function readData() {
+function blankData() {
+  return { appointments: [], pending: {} };
+}
+
+function normalizeData(parsed) {
+  if (!parsed || !Array.isArray(parsed.appointments)) return blankData();
+  const pending = parsed.pending && typeof parsed.pending === "object" && !Array.isArray(parsed.pending)
+    ? parsed.pending
+    : {};
+  return { appointments: parsed.appointments, pending };
+}
+
+function redisConfig() {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return null;
+  return { url, token };
+}
+
+async function redisCommand(args) {
+  const redis = redisConfig();
+  const response = await fetch(redis.url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${redis.token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(args),
+  });
+  const payload = await response.json();
+  if (!response.ok || payload.error) throw new Error(payload.error || "Տվյալների պահոցը չպատասխանեց։");
+  return payload.result;
+}
+
+function readFileData() {
   try {
-    const parsed = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
-    if (!parsed || !Array.isArray(parsed.appointments)) return { appointments: [] };
-    return parsed;
+    return normalizeData(JSON.parse(fs.readFileSync(DATA_PATH, "utf8")));
   } catch (error) {
     if (error.code !== "ENOENT") console.error("Տվյալների ֆայլը չի կարդացվել", error);
-    return { appointments: [] };
+    return blankData();
   }
+}
+
+async function readData() {
+  if (!redisConfig()) return readFileData();
+  const raw = await redisCommand(["GET", DATA_KEY]);
+  if (!raw) return blankData();
+  return normalizeData(JSON.parse(raw));
 }
 
 function sleepSync(ms) {
@@ -113,7 +151,7 @@ function sleepSync(ms) {
   while (Date.now() < end) {}
 }
 
-function writeData(data) {
+function writeFileData(data) {
   fs.mkdirSync(path.dirname(DATA_PATH), { recursive: true });
   const payload = JSON.stringify(data, null, 2);
   let lastError;
@@ -128,6 +166,14 @@ function writeData(data) {
     }
   }
   throw lastError;
+}
+
+async function writeData(data) {
+  if (!redisConfig()) {
+    writeFileData(data);
+    return;
+  }
+  await redisCommand(["SET", DATA_KEY, JSON.stringify(data)]);
 }
 
 function withLock(task) {
@@ -201,19 +247,19 @@ function personFields(body) {
   return { firstName, lastName, phone, phoneKey: key };
 }
 
-function purgePending() {
+function purgePending(data) {
   const now = Date.now();
-  for (const [key, hold] of pending) {
-    if (hold.expires < now) pending.delete(key);
+  for (const [key, hold] of Object.entries(data.pending)) {
+    if (!hold || hold.expires < now) delete data.pending[key];
   }
 }
 
-function busyTimes(date) {
-  purgePending();
+function busyTimes(data, date) {
+  purgePending(data);
   const times = new Set(
-    readData().appointments.filter((item) => item.date === date).map((item) => item.time)
+    data.appointments.filter((item) => item.date === date).map((item) => item.time)
   );
-  for (const hold of pending.values()) {
+  for (const hold of Object.values(data.pending)) {
     if (hold.date === date) times.add(hold.time);
   }
   return times;
@@ -321,7 +367,7 @@ async function startBooking(body, host) {
   const checked = bookingRules(body);
   if (checked.error) return checked.error;
   const { tomorrow, time, person } = checked;
-  const data = readData();
+  const data = await readData();
   if (bookingForPhone(data, person.phoneKey)) {
     return {
       status: 409,
@@ -331,12 +377,12 @@ async function startBooking(body, host) {
       },
     };
   }
-  purgePending();
-  if (busyTimes(tomorrow).has(time) && pending.get(person.phoneKey)?.time !== time) {
+  purgePending(data);
+  if (busyTimes(data, tomorrow).has(time) && data.pending[person.phoneKey]?.time !== time) {
     return { status: 409, body: { error: "Այս ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։", field: "time" } };
   }
   const code = fourDigitCode();
-  pending.set(person.phoneKey, {
+  data.pending[person.phoneKey] = {
     code,
     expires: Date.now() + CODE_TTL_MS,
     attempts: 0,
@@ -345,13 +391,15 @@ async function startBooking(body, host) {
     firstName: person.firstName,
     lastName: person.lastName,
     phone: person.phone,
-  });
+  };
+  await writeData(data);
   try {
     const smsHost = String(host || "").replace(/[^a-z0-9.-]/gi, "");
     const otpLine = smsHost ? `\n@${smsHost} #${code}` : "";
     await sendSms(person.phone, `Cardiotonus: հաստատման կոդը ${code} է։ Կոդը գործում է 10 րոպե։${otpLine}`);
   } catch (error) {
-    pending.delete(person.phoneKey);
+    delete data.pending[person.phoneKey];
+    await writeData(data);
     if (error.code === "SMS_OFF") {
       return { status: 503, body: { error: "SMS ծառայությունը դեռ միացված չէ, դրա համար գրանցումը հաստատել հնարավոր չէ։" } };
     }
@@ -360,31 +408,35 @@ async function startBooking(body, host) {
   return { status: 200, body: { ok: true, step: "code" } };
 }
 
-function confirmBooking(body) {
+async function confirmBooking(body) {
   const checked = bookingRules(body);
   if (checked.error) return checked.error;
   const { person, time } = checked;
   const code = String(body.code || "").replace(/\D/g, "");
-  purgePending();
-  const hold = pending.get(person.phoneKey);
+  const data = await readData();
+  purgePending(data);
+  const hold = data.pending[person.phoneKey];
   if (!hold || hold.time !== time) {
     return { status: 400, body: { error: "Սկզբում ստացեք հաստատման կոդը։", field: "code" } };
   }
   hold.attempts += 1;
   if (hold.attempts > 5) {
-    pending.delete(person.phoneKey);
+    delete data.pending[person.phoneKey];
+    await writeData(data);
     return { status: 429, body: { error: "Չափից շատ սխալ կոդ։ Ուղարկեք նորը։", field: "code" } };
   }
   if (!codesMatch(hold.code, code)) {
+    await writeData(data);
     return { status: 400, body: { error: "Կոդը սխալ է։", field: "code" } };
   }
-  const data = readData();
   if (bookingForPhone(data, person.phoneKey)) {
-    pending.delete(person.phoneKey);
+    delete data.pending[person.phoneKey];
+    await writeData(data);
     return { status: 409, body: { error: "Այս հեռախոսահամարով արդեն գրանցում կա։", field: "phone" } };
   }
   if (data.appointments.some((item) => item.date === hold.date && item.time === hold.time)) {
-    pending.delete(person.phoneKey);
+    delete data.pending[person.phoneKey];
+    await writeData(data);
     return { status: 409, body: { error: "Այս ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։", field: "time" } };
   }
   const appointment = {
@@ -397,8 +449,8 @@ function confirmBooking(body) {
     createdAt: new Date().toISOString(),
   };
   data.appointments.push(appointment);
-  writeData(data);
-  pending.delete(person.phoneKey);
+  delete data.pending[person.phoneKey];
+  await writeData(data);
   return { status: 201, body: { ok: true, appointment: publicAppointment(appointment) } };
 }
 
@@ -408,10 +460,10 @@ function minePhone(body) {
   return { key };
 }
 
-function findMine(body) {
+async function findMine(body) {
   const checked = minePhone(body);
   if (checked.error) return checked.error;
-  const data = readData();
+  const data = await readData();
   const item = bookingForPhone(data, checked.key);
   if (!item) return { status: 200, body: { found: false } };
   return {
@@ -420,40 +472,40 @@ function findMine(body) {
   };
 }
 
-function cancelMine(body) {
+async function cancelMine(body) {
   const checked = minePhone(body);
   if (checked.error) return checked.error;
-  const data = readData();
+  const data = await readData();
   const next = data.appointments.filter((item) => phoneKey(item.phone) !== checked.key);
   if (next.length === data.appointments.length) {
     return { status: 404, body: { error: "Այս համարով գրանցում չկա։" } };
   }
   data.appointments = next;
-  writeData(data);
+  await writeData(data);
   return { status: 200, body: { ok: true } };
 }
 
-function moveMine(body) {
+async function moveMine(body) {
   const checked = minePhone(body);
   if (checked.error) return checked.error;
   const time = String(body.time || "");
   if (!SLOTS.includes(time)) {
     return { status: 400, body: { error: "Ընտրեք ազատ ժամը։", field: "time" } };
   }
-  const data = readData();
+  const data = await readData();
   const item = bookingForPhone(data, checked.key);
   if (!item) return { status: 404, body: { error: "Այս համարով գրանցում չկա։" } };
   const taken = data.appointments.some((entry) => entry !== item && entry.date === item.date && entry.time === time);
   if (taken) return { status: 409, body: { error: "Այդ ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։" } };
   item.time = time;
-  writeData(data);
+  await writeData(data);
   return {
     status: 200,
     body: { ok: true, appointment: publicMine(item), slots: dayChoices(data, item.date, item.time) },
   };
 }
 
-function createStaffBooking(body) {
+async function createStaffBooking(body) {
   const date = String(body.date || "");
   const time = String(body.time || "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !isWorkingDay(date)) {
@@ -467,7 +519,7 @@ function createStaffBooking(body) {
   }
   const person = personFields(body);
   if (person.error) return person.error;
-  const data = readData();
+  const data = await readData();
   if (bookingForPhone(data, person.phoneKey)) {
     return {
       status: 409,
@@ -488,18 +540,31 @@ function createStaffBooking(body) {
     createdAt: new Date().toISOString(),
   };
   data.appointments.push(appointment);
-  writeData(data);
+  await writeData(data);
   return { status: 201, body: { ok: true, appointment: publicAppointment(appointment) } };
 }
 
+function sessionToken() {
+  const expires = Date.now() + 12 * 60 * 60 * 1000;
+  const body = String(expires);
+  const signature = crypto.createHmac("sha256", ADMIN_PASSWORD).update(body).digest("hex");
+  return `${body}.${signature}`;
+}
+
+function sessionValid(token) {
+  const [body, signature] = String(token || "").split(".");
+  if (!body || !signature) return false;
+  const expected = crypto.createHmac("sha256", ADMIN_PASSWORD).update(body).digest("hex");
+  const left = Buffer.from(signature);
+  const right = Buffer.from(expected);
+  if (left.length !== right.length || !crypto.timingSafeEqual(left, right)) return false;
+  return Number(body) > Date.now();
+}
+
 function requireAdmin(req, res, next) {
-  const token = req.cookies.admin_session;
-  const session = token ? sessions.get(token) : null;
-  if (!session || session.expires < Date.now()) {
-    if (token) sessions.delete(token);
+  if (!sessionValid(req.cookies.admin_session)) {
     return res.status(401).json({ error: "Մուտք գործեք ադմին վահանակ։" });
   }
-  session.expires = Date.now() + 12 * 60 * 60 * 1000;
   next();
 }
 
@@ -517,6 +582,7 @@ function limitBookings(req, res, next) {
 
 const app = express();
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "32kb" }));
 app.use(cookieParser());
 app.use((req, res, next) => {
@@ -525,14 +591,15 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/api/slots", (req, res) => {
+app.get("/api/slots", async (req, res) => {
   const date = calendarDate(1);
   const open = isWorkingDay(date);
-  const taken = busyTimes(date);
+  const data = await readData();
+  const taken = busyTimes(data, date);
   let preview = null;
   if (!open) {
     const previewDate = nextWorkingDate(0);
-    const previewTaken = busyTimes(previewDate);
+    const previewTaken = busyTimes(data, previewDate);
     preview = {
       date: previewDate,
       dateLabel: formatHy(previewDate),
@@ -573,8 +640,8 @@ app.post("/api/book/confirm", limitBookings, async (req, res) => {
   }
 });
 
-app.post("/api/mine", limitBookings, (req, res) => {
-  const result = findMine(req.body || {});
+app.post("/api/mine", limitBookings, async (req, res) => {
+  const result = await findMine(req.body || {});
   res.status(result.status).json(result.body);
 });
 
@@ -603,12 +670,10 @@ app.post("/api/admin/login", (req, res) => {
   if (!password || !safeEqual(password, ADMIN_PASSWORD)) {
     return res.status(401).json({ error: "Գաղտնաբառը սխալ է։" });
   }
-  const token = crypto.randomBytes(32).toString("hex");
-  sessions.set(token, { expires: Date.now() + 12 * 60 * 60 * 1000 });
-  res.cookie("admin_session", token, {
+  res.cookie("admin_session", sessionToken(), {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: Boolean(process.env.VERCEL),
     maxAge: 12 * 60 * 60 * 1000,
     path: "/",
   });
@@ -616,15 +681,13 @@ app.post("/api/admin/login", (req, res) => {
 });
 
 app.post("/api/admin/logout", (req, res) => {
-  const token = req.cookies.admin_session;
-  if (token) sessions.delete(token);
   res.clearCookie("admin_session", { path: "/" });
   res.json({ ok: true });
 });
 
-app.get("/api/admin/appointments", requireAdmin, (req, res) => {
+app.get("/api/admin/appointments", requireAdmin, async (req, res) => {
   const requested = String(req.query.date || nextWorkingDate(0));
-  const data = readData().appointments.slice().sort((a, b) => {
+  const data = (await readData()).appointments.slice().sort((a, b) => {
     return a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date);
   });
   const dates = [...new Set(data.map((item) => item.date))];
@@ -657,14 +720,14 @@ app.post("/api/admin/appointments", requireAdmin, async (req, res) => {
 
 app.delete("/api/admin/appointments/:id", requireAdmin, async (req, res) => {
   try {
-    const result = await withLock(() => {
-      const data = readData();
+    const result = await withLock(async () => {
+      const data = await readData();
       const next = data.appointments.filter((item) => item.id !== req.params.id);
       if (next.length === data.appointments.length) {
         return { status: 404, body: { error: "Գրանցումը չի գտնվել։" } };
       }
       data.appointments = next;
-      writeData(data);
+      await writeData(data);
       return { status: 200, body: { ok: true } };
     });
     res.status(result.status).json(result.body);
@@ -691,4 +754,6 @@ function start(port) {
   });
 }
 
-start(PORT);
+module.exports = app;
+
+if (require.main === module) start(PORT);
