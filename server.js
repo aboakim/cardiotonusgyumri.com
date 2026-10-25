@@ -154,7 +154,38 @@ function readFileData() {
   }
 }
 
+function addMonths(isoDate, months) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  const result = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), Math.min(day, lastDay)));
+  return result.toISOString().slice(0, 10);
+}
+
+function recordStart(item) {
+  if (item.createdAt) {
+    const day = yerevanDay(item.createdAt);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(day)) return day;
+  }
+  return item.date;
+}
+
+function expiredAppointment(item) {
+  const start = recordStart(item);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return false;
+  return calendarDate(0) >= addMonths(start, 1);
+}
+
 async function readData() {
+  const data = await readStoredData();
+  const kept = data.appointments.filter((item) => !expiredAppointment(item));
+  if (kept.length === data.appointments.length) return data;
+  data.appointments = kept;
+  await writeData(data);
+  return data;
+}
+
+async function readStoredData() {
   if (!redisConfig()) return readFileData();
   const raw = await redisCommand(["GET", DATA_KEY]);
   if (!raw) return blankData();
