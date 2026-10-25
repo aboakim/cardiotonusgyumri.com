@@ -30,7 +30,14 @@
     </div>
   </header>
 
-  <main class="page">
+  <main class="page page-admin">
+    <svg class="admin-heart" viewBox="0 0 240 220" aria-hidden="true">
+      <g class="admin-heart-beat">
+        <path d="M120 196C120 196 28 138 28 78C28 44 54 24 82 24C98 24 112 34 120 50C128 34 142 24 158 24C186 24 212 44 212 78C212 138 120 196 120 196Z"></path>
+        <path class="admin-trace" d="M36 112H74L88 112L102 68L122 156L140 96L154 112H206"></path>
+        <path class="admin-trace admin-trace-live" d="M36 112H74L88 112L102 68L122 156L140 96L154 112H206"></path>
+      </g>
+    </svg>
     <div class="container admin-wrap">
       <section id="login-card" class="booking-card login-card">
         <form id="login-form">
@@ -66,6 +73,7 @@
           <div>
             <p class="eyebrow" data-i18n="registered">Գրանցվածներ</p>
             <h1 id="dash-title">Այցելություններ</h1>
+            <div class="ecg-line" aria-hidden="true"></div>
             <p id="dash-count" class="lead"></p>
           </div>
           <div class="dash-actions">
