@@ -169,18 +169,16 @@ async function requestCode() {
     });
     const data = await response.json();
     if (!response.ok) {
-      showError(errorNode, data.error || "Կոդը չուղարկվեց։");
+      showError(errorNode, data.error || "Գրանցումը չհաջողվեց։");
       if (data.field && form.elements[data.field]) form.elements[data.field].focus();
       if (response.status === 409) await loadSlots();
       else submit.disabled = false;
       return;
     }
     form.hidden = true;
-    codeForm.hidden = false;
-    codeForm.code.value = "";
-    codeForm.code.focus();
-    codeForm.scrollIntoView({ behavior: "smooth", block: "center" });
-    listenForSmsCode();
+    success.hidden = false;
+    successCopy.textContent = `${data.appointment.firstName} ${data.appointment.lastName}, ${data.appointment.dateLabel}, ժամը ${data.appointment.time}։ Խնդրում ենք ներկայանալ Cardiotonus կլինիկա՝ Գարեգին Նժդեհ 5/8։`;
+    success.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch {
     showError(errorNode, "Կապը չհաջողվեց։ Կրկին փորձեք։");
     submit.disabled = false;

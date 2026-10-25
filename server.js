@@ -363,7 +363,7 @@ function bookingRules(body) {
   return { tomorrow, time, person };
 }
 
-async function startBooking(body, host) {
+async function startBooking(body) {
   const checked = bookingRules(body);
   if (checked.error) return checked.error;
   const { tomorrow, time, person } = checked;
@@ -377,35 +377,21 @@ async function startBooking(body, host) {
       },
     };
   }
-  purgePending(data);
-  if (busyTimes(data, tomorrow).has(time) && data.pending[person.phoneKey]?.time !== time) {
+  if (data.appointments.some((item) => item.date === tomorrow && item.time === time)) {
     return { status: 409, body: { error: "Այս ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։", field: "time" } };
   }
-  const code = fourDigitCode();
-  data.pending[person.phoneKey] = {
-    code,
-    expires: Date.now() + CODE_TTL_MS,
-    attempts: 0,
+  const appointment = {
+    id: crypto.randomUUID(),
     date: tomorrow,
     time,
     firstName: person.firstName,
     lastName: person.lastName,
     phone: person.phone,
+    createdAt: new Date().toISOString(),
   };
+  data.appointments.push(appointment);
   await writeData(data);
-  try {
-    const smsHost = String(host || "").replace(/[^a-z0-9.-]/gi, "");
-    const otpLine = smsHost ? `\n@${smsHost} #${code}` : "";
-    await sendSms(person.phone, `Cardiotonus: հաստատման կոդը ${code} է։ Կոդը գործում է 10 րոպե։${otpLine}`);
-  } catch (error) {
-    delete data.pending[person.phoneKey];
-    await writeData(data);
-    if (error.code === "SMS_OFF") {
-      return { status: 503, body: { error: "SMS ծառայությունը դեռ միացված չէ, դրա համար գրանցումը հաստատել հնարավոր չէ։" } };
-    }
-    return { status: 502, body: { error: "Կոդը չուղարկվեց։ Ստուգեք համարը և կրկին փորձեք։" } };
-  }
-  return { status: 200, body: { ok: true, step: "code" } };
+  return { status: 201, body: { ok: true, appointment: publicAppointment(appointment) } };
 }
 
 async function confirmBooking(body) {
@@ -622,7 +608,7 @@ app.get("/api/slots", async (req, res) => {
 
 app.post("/api/book", limitBookings, async (req, res) => {
   try {
-    const result = await withLock(() => startBooking(req.body || {}, req.hostname));
+    const result = await withLock(() => startBooking(req.body || {}));
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error(error);
