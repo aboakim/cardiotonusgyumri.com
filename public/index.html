@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="hy">
+<html lang="hy" data-title-key="pageTitle">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Գրանցում · Cardiotonus</title>
-  <meta name="description" content="Գրանցվեք Cardiotonus բժշկական կենտրոնի վաղվա այցելությանը։">
+  <meta name="description" data-i18n-content="pageDescription" content="Գրանցվեք Cardiotonus բժշկական կենտրոնի վաղվա այցելությանը։">
   <meta name="theme-color" content="#0c0c0e">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -27,8 +27,12 @@
         <span>cardiotonus</span>
       </a>
       <nav class="site-nav">
-        <button type="button" id="show-book" hidden>Գրանցում</button>
-        <button type="button" id="show-mine">Իմ գրանցումը</button>
+        <div class="lang-switch" role="group" data-i18n-aria="language">
+          <button type="button" data-set-lang="hy" aria-pressed="true">ՀԱՅ</button>
+          <button type="button" data-set-lang="ru">РУС</button>
+        </div>
+        <button type="button" id="show-book" data-i18n="showBook" hidden>Գրանցում</button>
+        <button type="button" id="show-mine" data-i18n="showMine">Իմ գրանցումը</button>
       </nav>
     </div>
   </header>
@@ -36,60 +40,60 @@
   <main class="page">
     <div class="container booking-layout" id="booking-view">
       <section class="booking-intro">
-        <p class="eyebrow">Հաջորդ օրվա այց</p>
-        <h1>Գրանցվել ընդունելության</h1>
+        <p class="eyebrow" data-i18n="nextVisit">Հաջորդ օրվա այց</p>
+        <h1 data-i18n="bookHeading">Գրանցվել ընդունելության</h1>
         <div class="ecg-line" aria-hidden="true"></div>
-        <p class="lead">Հաջորդ օրվա գրանցումը բացվում է ամեն օր ժամը 19:00-ին։ Ընդունելությունը երկուշաբթիից ուրբաթ է։ Մեկ հեռախոսահամարով օրվա ընթացքում կարելի է ունենալ միայն մեկ գրանցում։</p>
+        <p class="lead" data-i18n="bookLead">Հաջորդ օրվա գրանցումը բացվում է ամեն օր ժամը 19:00-ին։ Ընդունելությունը երկուշաբթիից ուրբաթ է։ Մեկ հեռախոսահամարով օրվա ընթացքում կարելի է ունենալ միայն մեկ գրանցում։</p>
         <p id="demo-banner" class="demo-banner" hidden></p>
         <div class="date-banner">
-          <span>Ամսաթիվ</span>
+          <span data-i18n="dateWord">Ամսաթիվ</span>
           <strong id="booking-date">Բեռնվում է…</strong>
           <em id="booking-count"></em>
         </div>
         <div class="legend">
-          <span><i class="swatch free"></i>Ազատ</span>
-          <span><i class="swatch busy"></i>Զբաղված</span>
-          <span><i class="swatch picked"></i>Ընտրված</span>
+          <span><i class="swatch free"></i><span data-i18n="free">Ազատ</span></span>
+          <span><i class="swatch busy"></i><span data-i18n="busy">Զբաղված</span></span>
+          <span><i class="swatch picked"></i><span data-i18n="picked">Ընտրված</span></span>
         </div>
-        <div id="slot-grid" class="slot-grid" role="listbox" aria-label="Ազատ ժամեր"></div>
+        <div id="slot-grid" class="slot-grid" role="listbox" data-i18n-aria="slotsAria" aria-label="Ազատ ժամեր"></div>
         <p id="slots-message" class="form-error" hidden></p>
       </section>
 
       <section class="booking-card" id="booking-card">
         <form id="booking-form">
-          <h2>Ձեր տվյալները</h2>
+          <h2 data-i18n="yourDetails">Ձեր տվյալները</h2>
           <label>
-            Անուն
+            <span data-i18n="firstName">Անուն</span>
             <input id="firstName" name="firstName" autocomplete="given-name" maxlength="40" required>
           </label>
           <label>
-            Ազգանուն
+            <span data-i18n="lastName">Ազգանուն</span>
             <input id="lastName" name="lastName" autocomplete="family-name" maxlength="40" required>
           </label>
           <label>
-            Հեռախոսահամար
+            <span data-i18n="phone">Հեռախոսահամար</span>
             <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" enterkeyhint="done" placeholder="098 00 00 00" required>
           </label>
           <p class="chosen" id="chosen-time">Ժամը դեռ ընտրված չէ</p>
           <p id="form-error" class="form-error" role="alert" hidden></p>
-          <button class="button button-full" id="submit-booking" type="submit" disabled>Գրանցվել</button>
+          <button class="button button-full" id="submit-booking" data-i18n="submit" type="submit" disabled>Գրանցվել</button>
         </form>
         <form id="code-form" hidden>
-          <h2>Հաստատման կոդ</h2>
-          <p class="lead">Հեռախոսին ուղարկված քառանիշ թիվը գրեք այստեղ։ Գրանցումը կհաստատվի միայն դրանից հետո։</p>
+          <h2 data-i18n="codeTitle">Հաստատման կոդ</h2>
+          <p class="lead" data-i18n="codeLead">Հեռախոսին ուղարկված քառանիշ թիվը գրեք այստեղ։ Գրանցումը կհաստատվի միայն դրանից հետո։</p>
           <label>
-            Կոդ
+            <span data-i18n="code">Կոդ</span>
             <input id="sms-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" enterkeyhint="done" maxlength="4" pattern="[0-9]*" placeholder="0000" required>
           </label>
           <p id="code-error" class="form-error" role="alert" hidden></p>
-          <button class="button button-full" type="submit">Հաստատել գրանցումը</button>
-          <button class="button button-ghost button-full" id="resend-code" type="button">Նոր կոդ ուղարկել</button>
+          <button class="button button-full" data-i18n="confirmBooking" type="submit">Հաստատել գրանցումը</button>
+          <button class="button button-ghost button-full" id="resend-code" data-i18n="resendCode" type="button">Նոր կոդ ուղարկել</button>
         </form>
         <div id="booking-success" class="success" hidden>
-          <p class="eyebrow">Հաստատված է</p>
-          <h2>Այցը գրանցված է</h2>
+          <p class="eyebrow" data-i18n="confirmed">Հաստատված է</p>
+          <h2 data-i18n="visitSaved">Այցը գրանցված է</h2>
           <p id="success-copy"></p>
-          <a class="button" href="/">Նոր գրանցում</a>
+          <a class="button" data-i18n="newBooking" href="/">Նոր գրանցում</a>
         </div>
       </section>
     </div>
@@ -97,24 +101,24 @@
     <div class="container mine-layout" id="mine-view" hidden>
       <section class="booking-card mine-card">
         <form id="mine-phone-form">
-          <p class="eyebrow">Իմ գրանցումը</p>
-          <h1>Գտնել ամրագրումը</h1>
-          <p class="lead">Գրեք այն հեռախոսահամարը, որով գրանցվել եք։ Եթե գրանցում կա, կարող եք չեղարկել կամ ընտրել այլ ազատ ժամ։</p>
+          <p class="eyebrow" data-i18n="showMine">Իմ գրանցումը</p>
+          <h1 data-i18n="findBooking">Գտնել ամրագրումը</h1>
+          <p class="lead" data-i18n="mineLead">Գրեք այն հեռախոսահամարը, որով գրանցվել եք։ Եթե գրանցում կա, կարող եք չեղարկել կամ ընտրել այլ ազատ ժամ։</p>
           <label>
-            Հեռախոսահամար
+            <span data-i18n="phone">Հեռախոսահամար</span>
             <input id="mine-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" enterkeyhint="search" placeholder="098 00 00 00" required>
           </label>
           <p id="mine-phone-error" class="form-error" role="alert" hidden></p>
-          <button class="button button-full" type="submit">Ստուգել</button>
+          <button class="button button-full" data-i18n="check" type="submit">Ստուգել</button>
         </form>
         <div id="mine-result" hidden>
           <p id="mine-empty" class="lead" hidden>Այս հեռախոսահամարով գրանցում չկա։</p>
           <div id="mine-card" hidden>
-            <p class="eyebrow">Գրանցումը գտնվել է</p>
+            <p class="eyebrow" data-i18n="mineFound">Գրանցումը գտնվել է</p>
             <h2 id="mine-who"></h2>
             <p id="mine-when" class="lead"></p>
-            <button class="button button-ghost" id="mine-cancel" type="button">Չեղարկել գրանցումը</button>
-            <h2>Այլ ազատ ժամ</h2>
+            <button class="button button-ghost" id="mine-cancel" data-i18n="cancelBooking" type="button">Չեղարկել գրանցումը</button>
+            <h2 data-i18n="otherTime">Այլ ազատ ժամ</h2>
             <div id="mine-slots" class="slot-grid"></div>
             <p id="mine-action-error" class="form-error" role="alert" hidden></p>
           </div>
@@ -129,12 +133,13 @@
         <img src="/images/logo.png" alt="" width="64" height="64">
         <div>
           <strong>Cardiotonus</strong>
-          <p>Գյումրի, Գարեգին Նժդեհ 5/8</p>
+          <p data-i18n="address">Գյումրի, Գարեգին Նժդեհ 5/8</p>
         </div>
       </div>
-      <p>Չեղարկելու կամ ժամը փոխելու համար բացեք «Իմ գրանցումը»։</p>
+      <p data-i18n="footerNote">Չեղարկելու կամ ժամը փոխելու համար բացեք «Իմ գրանցումը»։</p>
     </div>
   </footer>
+  <script src="/js/i18n.js"></script>
   <script src="/js/book.js"></script>
 </body>
 </html>

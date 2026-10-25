@@ -11,29 +11,97 @@ const TZ = "Asia/Yerevan";
 const DATA_PATH = path.join(__dirname, "data", "appointments.json");
 const PUBLIC_PATH = path.join(__dirname, "public");
 
-const MONTHS = [
-  "հունվարի",
-  "փետրվարի",
-  "մարտի",
-  "ապրիլի",
-  "մայիսի",
-  "հունիսի",
-  "հուլիսի",
-  "օգոստոսի",
-  "սեպտեմբերի",
-  "հոկտեմբերի",
-  "նոյեմբերի",
-  "դեկտեմբերի",
-];
-const WEEKDAYS = [
-  "կիրակի",
-  "երկուշաբթի",
-  "երեքշաբթի",
-  "չորեքշաբթի",
-  "հինգշաբթի",
-  "ուրբաթ",
-  "շաբաթ",
-];
+const MONTHS = {
+  hy: ["հունվարի", "փետրվարի", "մարտի", "ապրիլի", "մայիսի", "հունիսի", "հուլիսի", "օգոստոսի", "սեպտեմբերի", "հոկտեմբերի", "նոյեմբերի", "դեկտեմբերի"],
+  ru: ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"],
+};
+const WEEKDAYS = {
+  hy: ["կիրակի", "երկուշաբթի", "երեքշաբթի", "չորեքշաբթի", "հինգշաբթի", "ուրբաթ", "շաբաթ"],
+  ru: ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"],
+};
+const COPY = {
+  hy: {
+    needFirstName: "Գրեք անունը։",
+    needLastName: "Գրեք ազգանունը։",
+    needPhone: "Գրեք հայաստանյան բջջային համար։",
+    opensLater: "Հաջորդ օրվա գրանցումը բացվում է ժամը {time}-ին։",
+    onlyTomorrow: "Գրանցումը բաց է միայն հաջորդ օրվա համար։ Թարմացրեք էջը։",
+    tomorrowOff: "Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է։",
+    pickListed: "Ընտրեք ցուցակի ժամերից մեկը։",
+    alreadyToday: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։ Կեսգիշերից հետո կարող եք գրանցվել նորից։ Բացեք «Իմ գրանցումը»՝ չեղարկելու կամ ժամը փոխելու համար։",
+    alreadyTodayShort: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։",
+    alreadyTodayStaff: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։ Կեսգիշերից հետո կարող եք գրանցվել նորից։",
+    slotTaken: "Այս ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։",
+    slotTakenShort: "Այս ժամն արդեն զբաղված է։",
+    slotTakenMove: "Այդ ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։",
+    needCode: "Սկզբում ստացեք հաստատման կոդը։",
+    tooManyCodes: "Չափից շատ սխալ կոդ։ Ուղարկեք նորը։",
+    badCode: "Կոդը սխալ է։",
+    noBooking: "Այս համարով գրանցում չկա։",
+    pickFree: "Ընտրեք ազատ ժամը։",
+    weekdaysOnly: "Ընդունելությունը միայն երկուշաբթիից ուրբաթ է։",
+    pastDate: "Անցած օրվա համար տեղ ավելացնել հնարավոր չէ։",
+    adminRequired: "Մուտք գործեք ադմին վահանակ։",
+    tooManyTries: "Չափից շատ փորձ եղավ։ Մի քանի րոպեից կրկին փորձեք։",
+    closedToday: "Հաջորդ օրվա գրանցումը բացվում է այսօր ժամը {time}-ին։",
+    closedWeekend: "Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է, իսկ գրանցումը բացվում է նախորդ օրը ժամը {time}-ին։",
+    bookFail: "Գրանցումը չհաջողվեց։ Կրկին փորձեք։",
+    confirmFail: "Հաստատումը չհաջողվեց։ Կրկին փորձեք։",
+    cancelFail: "Չեղարկումը չհաջողվեց։",
+    moveFail: "Ժամը չփոխվեց։ Կրկին փորձեք։",
+    badPassword: "Գաղտնաբառը սխալ է։",
+    allDays: "Բոլոր օրերը",
+    notFound: "Գրանցումը չի գտնվել։",
+  },
+  ru: {
+    needFirstName: "Введите имя.",
+    needLastName: "Введите фамилию.",
+    needPhone: "Введите армянский мобильный номер.",
+    opensLater: "Запись на следующий день открывается в {time}.",
+    onlyTomorrow: "Запись открыта только на следующий день. Обновите страницу.",
+    tomorrowOff: "Завтра нерабочий день. Приём с понедельника по пятницу.",
+    pickListed: "Выберите время из списка.",
+    alreadyToday: "С этим номером сегодня уже есть запись. После полуночи можно записаться снова. Откройте «Моя запись», чтобы отменить или перенести.",
+    alreadyTodayShort: "С этим номером сегодня уже есть запись.",
+    alreadyTodayStaff: "С этим номером сегодня уже есть запись. После полуночи можно записаться снова.",
+    slotTaken: "Это время уже занято. Выберите другое.",
+    slotTakenShort: "Это время уже занято.",
+    slotTakenMove: "Это время уже занято. Выберите другое.",
+    needCode: "Сначала получите код подтверждения.",
+    tooManyCodes: "Слишком много неверных кодов. Отправьте новый.",
+    badCode: "Код неверный.",
+    noBooking: "Записи с этим номером нет.",
+    pickFree: "Выберите свободное время.",
+    weekdaysOnly: "Приём только с понедельника по пятницу.",
+    pastDate: "Нельзя добавить запись на прошедший день.",
+    adminRequired: "Войдите в панель администратора.",
+    tooManyTries: "Слишком много попыток. Попробуйте через несколько минут.",
+    closedToday: "Запись на следующий день открывается сегодня в {time}.",
+    closedWeekend: "Завтра нерабочий день. Приём с понедельника по пятницу, а запись открывается накануне в {time}.",
+    bookFail: "Не удалось записать. Попробуйте ещё раз.",
+    confirmFail: "Не удалось подтвердить. Попробуйте ещё раз.",
+    cancelFail: "Не удалось отменить.",
+    moveFail: "Не удалось изменить время. Попробуйте ещё раз.",
+    badPassword: "Неверный пароль.",
+    allDays: "Все дни",
+    notFound: "Запись не найдена.",
+  },
+};
+
+function requestLang(value) {
+  return value === "ru" ? "ru" : "hy";
+}
+
+function text(lang, key, vars) {
+  const pack = COPY[requestLang(lang)] || COPY.hy;
+  let line = pack[key] || COPY.hy[key] || key;
+  if (vars) {
+    for (const [name, replacement] of Object.entries(vars)) {
+      line = line.split(`{${name}}`).join(String(replacement));
+    }
+  }
+  return line;
+}
 
 const SLOTS = [
   "09:30",
@@ -96,11 +164,12 @@ function isWorkingDay(iso) {
   return weekday >= 1 && weekday <= 5;
 }
 
-function formatHy(iso) {
+function formatDate(iso, lang) {
   const [year, month, day] = iso.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
-  const weekday = WEEKDAYS[date.getUTCDay()];
-  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${day} ${MONTHS[month - 1]} ${year}`;
+  const code = requestLang(lang);
+  const weekday = WEEKDAYS[code][date.getUTCDay()];
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${day} ${MONTHS[code][month - 1]} ${year}`;
 }
 
 function formatStamp(iso) {
@@ -249,11 +318,11 @@ function safeEqual(left, right) {
   return crypto.timingSafeEqual(a, b);
 }
 
-function publicAppointment(item) {
+function publicAppointment(item, lang) {
   return {
     id: item.id,
     date: item.date,
-    dateLabel: formatHy(item.date),
+    dateLabel: formatDate(item.date, lang),
     time: item.time,
     firstName: item.firstName,
     lastName: item.lastName,
@@ -280,19 +349,19 @@ function phoneKey(value) {
   return digits.length === 8 ? digits : null;
 }
 
-function personFields(body) {
+function personFields(body, lang) {
   const firstName = cleanName(body.firstName);
   const lastName = cleanName(body.lastName);
   const phone = cleanName(body.phone);
   const key = phoneKey(phone);
   if (!NAME_RE.test(firstName)) {
-    return { error: { status: 400, body: { error: "Գրեք անունը։", field: "firstName" } } };
+    return { error: { status: 400, body: { error: text(lang, "needFirstName"), field: "firstName" } } };
   }
   if (!NAME_RE.test(lastName)) {
-    return { error: { status: 400, body: { error: "Գրեք ազգանունը։", field: "lastName" } } };
+    return { error: { status: 400, body: { error: text(lang, "needLastName"), field: "lastName" } } };
   }
   if (!key) {
-    return { error: { status: 400, body: { error: "Գրեք հայաստանյան բջջային համար։", field: "phone" } } };
+    return { error: { status: 400, body: { error: text(lang, "needPhone"), field: "phone" } } };
   }
   return { firstName, lastName, phone, phoneKey: key };
 }
@@ -336,10 +405,10 @@ function upcomingForPhone(data, key) {
     .sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)))[0] || null;
 }
 
-function publicMine(item) {
+function publicMine(item, lang) {
   return {
     date: item.date,
-    dateLabel: formatHy(item.date),
+    dateLabel: formatDate(item.date, lang),
     time: item.time,
     firstName: item.firstName,
     lastName: item.lastName,
@@ -412,29 +481,29 @@ async function sendSms(phone, text) {
   }
 }
 
-function bookingRules(body) {
+function bookingRules(body, lang) {
   const tomorrow = calendarDate(1);
   const time = String(body.time || "");
   const date = String(body.date || "");
   if (!bookingWindowOpen()) {
-    return { error: { status: 409, body: { error: `Հաջորդ օրվա գրանցումը բացվում է ժամը ${bookingOpenLabel()}-ին։` } } };
+    return { error: { status: 409, body: { error: text(lang, "opensLater", { time: bookingOpenLabel() }) } } };
   }
   if (date !== tomorrow) {
-    return { error: { status: 409, body: { error: "Գրանցումը բաց է միայն հաջորդ օրվա համար։ Թարմացրեք էջը։" } } };
+    return { error: { status: 409, body: { error: text(lang, "onlyTomorrow") } } };
   }
   if (!isWorkingDay(tomorrow)) {
-    return { error: { status: 409, body: { error: "Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է։" } } };
+    return { error: { status: 409, body: { error: text(lang, "tomorrowOff") } } };
   }
   if (!SLOTS.includes(time)) {
-    return { error: { status: 400, body: { error: "Ընտրեք ցուցակի ժամերից մեկը։", field: "time" } } };
+    return { error: { status: 400, body: { error: text(lang, "pickListed"), field: "time" } } };
   }
-  const person = personFields(body);
+  const person = personFields(body, lang);
   if (person.error) return { error: person.error };
   return { tomorrow, time, person };
 }
 
-async function startBooking(body) {
-  const checked = bookingRules(body);
+async function startBooking(body, lang) {
+  const checked = bookingRules(body, lang);
   if (checked.error) return checked.error;
   const { tomorrow, time, person } = checked;
   const data = await readData();
@@ -442,13 +511,13 @@ async function startBooking(body) {
     return {
       status: 409,
       body: {
-        error: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։ Կեսգիշերից հետո կարող եք գրանցվել նորից։ Բացեք «Իմ գրանցումը»՝ չեղարկելու կամ ժամը փոխելու համար։",
+        error: text(lang, "alreadyToday"),
         field: "phone",
       },
     };
   }
   if (data.appointments.some((item) => item.date === tomorrow && item.time === time)) {
-    return { status: 409, body: { error: "Այս ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։", field: "time" } };
+    return { status: 409, body: { error: text(lang, "slotTaken"), field: "time" } };
   }
   const appointment = {
     id: crypto.randomUUID(),
@@ -461,11 +530,11 @@ async function startBooking(body) {
   };
   data.appointments.push(appointment);
   await writeData(data);
-  return { status: 201, body: { ok: true, appointment: publicAppointment(appointment) } };
+  return { status: 201, body: { ok: true, appointment: publicAppointment(appointment, lang) } };
 }
 
-async function confirmBooking(body) {
-  const checked = bookingRules(body);
+async function confirmBooking(body, lang) {
+  const checked = bookingRules(body, lang);
   if (checked.error) return checked.error;
   const { person, time } = checked;
   const code = String(body.code || "").replace(/\D/g, "");
@@ -473,27 +542,27 @@ async function confirmBooking(body) {
   purgePending(data);
   const hold = data.pending[person.phoneKey];
   if (!hold || hold.time !== time) {
-    return { status: 400, body: { error: "Սկզբում ստացեք հաստատման կոդը։", field: "code" } };
+    return { status: 400, body: { error: text(lang, "needCode"), field: "code" } };
   }
   hold.attempts += 1;
   if (hold.attempts > 5) {
     delete data.pending[person.phoneKey];
     await writeData(data);
-    return { status: 429, body: { error: "Չափից շատ սխալ կոդ։ Ուղարկեք նորը։", field: "code" } };
+    return { status: 429, body: { error: text(lang, "tooManyCodes"), field: "code" } };
   }
   if (!codesMatch(hold.code, code)) {
     await writeData(data);
-    return { status: 400, body: { error: "Կոդը սխալ է։", field: "code" } };
+    return { status: 400, body: { error: text(lang, "badCode"), field: "code" } };
   }
   if (bookedToday(data, person.phoneKey)) {
     delete data.pending[person.phoneKey];
     await writeData(data);
-    return { status: 409, body: { error: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։", field: "phone" } };
+    return { status: 409, body: { error: text(lang, "alreadyTodayShort"), field: "phone" } };
   }
   if (data.appointments.some((item) => item.date === hold.date && item.time === hold.time)) {
     delete data.pending[person.phoneKey];
     await writeData(data);
-    return { status: 409, body: { error: "Այս ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։", field: "time" } };
+    return { status: 409, body: { error: text(lang, "slotTaken"), field: "time" } };
   }
   const appointment = {
     id: crypto.randomUUID(),
@@ -507,82 +576,82 @@ async function confirmBooking(body) {
   data.appointments.push(appointment);
   delete data.pending[person.phoneKey];
   await writeData(data);
-  return { status: 201, body: { ok: true, appointment: publicAppointment(appointment) } };
+  return { status: 201, body: { ok: true, appointment: publicAppointment(appointment, lang) } };
 }
 
-function minePhone(body) {
+function minePhone(body, lang) {
   const key = phoneKey(body.phone);
-  if (!key) return { error: { status: 400, body: { error: "Գրեք հայաստանյան բջջային համար։", field: "phone" } } };
+  if (!key) return { error: { status: 400, body: { error: text(lang, "needPhone"), field: "phone" } } };
   return { key };
 }
 
-async function findMine(body) {
-  const checked = minePhone(body);
+async function findMine(body, lang) {
+  const checked = minePhone(body, lang);
   if (checked.error) return checked.error;
   const data = await readData();
   const item = upcomingForPhone(data, checked.key);
   if (!item) return { status: 200, body: { found: false } };
   return {
     status: 200,
-    body: { found: true, appointment: publicMine(item), slots: dayChoices(data, item.date, item.time) },
+    body: { found: true, appointment: publicMine(item, lang), slots: dayChoices(data, item.date, item.time) },
   };
 }
 
-async function cancelMine(body) {
-  const checked = minePhone(body);
+async function cancelMine(body, lang) {
+  const checked = minePhone(body, lang);
   if (checked.error) return checked.error;
   const data = await readData();
   const item = upcomingForPhone(data, checked.key);
-  if (!item) return { status: 404, body: { error: "Այս համարով գրանցում չկա։" } };
+  if (!item) return { status: 404, body: { error: text(lang, "noBooking") } };
   data.appointments = data.appointments.filter((entry) => entry.id !== item.id);
   await writeData(data);
   return { status: 200, body: { ok: true } };
 }
 
-async function moveMine(body) {
-  const checked = minePhone(body);
+async function moveMine(body, lang) {
+  const checked = minePhone(body, lang);
   if (checked.error) return checked.error;
   const time = String(body.time || "");
   if (!SLOTS.includes(time)) {
-    return { status: 400, body: { error: "Ընտրեք ազատ ժամը։", field: "time" } };
+    return { status: 400, body: { error: text(lang, "pickFree"), field: "time" } };
   }
   const data = await readData();
   const item = upcomingForPhone(data, checked.key);
-  if (!item) return { status: 404, body: { error: "Այս համարով գրանցում չկա։" } };
+  if (!item) return { status: 404, body: { error: text(lang, "noBooking") } };
   const taken = data.appointments.some((entry) => entry !== item && entry.date === item.date && entry.time === time);
-  if (taken) return { status: 409, body: { error: "Այդ ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։" } };
+  if (taken) return { status: 409, body: { error: text(lang, "slotTakenMove") } };
   item.time = time;
   await writeData(data);
   return {
     status: 200,
-    body: { ok: true, appointment: publicMine(item), slots: dayChoices(data, item.date, item.time) },
+    body: { ok: true, appointment: publicMine(item, lang), slots: dayChoices(data, item.date, item.time) },
   };
 }
 
-async function createStaffBooking(body) {
+async function createStaffBooking(body, lang) {
   const date = String(body.date || "");
   const time = String(body.time || "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !isWorkingDay(date)) {
-    return { status: 400, body: { error: "Ընդունելությունը միայն երկուշաբթիից ուրբաթ է։" } };
+    return { status: 400, body: { error: text(lang, "weekdaysOnly") } };
   }
   if (date < calendarDate(0)) {
-    return { status: 400, body: { error: "Անցած օրվա համար տեղ ավելացնել հնարավոր չէ։" } };
+    return { status: 400, body: { error: text(lang, "pastDate") } };
   }
   if (!SLOTS.includes(time)) {
-    return { status: 400, body: { error: "Ընտրեք ցուցակի ժամերից մեկը։", field: "time" } };
+    return { status: 400, body: { error: text(lang, "pickListed"), field: "time" } };
   }
-  const person = personFields(body);
+  const person = personFields(body, lang);
   if (person.error) return person.error;
   const data = await readData();
   if (bookedToday(data, person.phoneKey)) {
     return {
       status: 409,
-      body: { error: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։ Կեսգիշերից հետո կարող եք գրանցվել նորից։", field: "phone" },
+      body: { error: text(lang, "alreadyTodayStaff"), field: "phone" },
     };
   }
   const taken = data.appointments.some((item) => item.date === date && item.time === time);
   if (taken) {
-    return { status: 409, body: { error: "Այս ժամն արդեն զբաղված է։", field: "time" } };
+    return { status: 409, body: { error: text(lang, "slotTakenShort"), field: "time" } };
   }
   const appointment = {
     id: crypto.randomUUID(),
@@ -595,7 +664,7 @@ async function createStaffBooking(body) {
   };
   data.appointments.push(appointment);
   await writeData(data);
-  return { status: 201, body: { ok: true, appointment: publicAppointment(appointment) } };
+  return { status: 201, body: { ok: true, appointment: publicAppointment(appointment, lang) } };
 }
 
 function sessionToken() {
@@ -617,7 +686,7 @@ function sessionValid(token) {
 
 function requireAdmin(req, res, next) {
   if (!sessionValid(req.cookies.admin_session)) {
-    return res.status(401).json({ error: "Մուտք գործեք ադմին վահանակ։" });
+    return res.status(401).json({ error: text(req.lang, "adminRequired") });
   }
   next();
 }
@@ -627,7 +696,7 @@ function limitBookings(req, res, next) {
   const key = req.ip || "local";
   const recent = (bookingHits.get(key) || []).filter((stamp) => now - stamp < 10 * 60 * 1000);
   if (recent.length >= 20) {
-    return res.status(429).json({ error: "Չափից շատ փորձ եղավ։ Մի քանի րոպեից կրկին փորձեք։" });
+    return res.status(429).json({ error: text(req.lang, "tooManyTries") });
   }
   recent.push(now);
   bookingHits.set(key, recent);
@@ -640,6 +709,7 @@ app.set("trust proxy", 1);
 app.use(express.json({ limit: "32kb" }));
 app.use(cookieParser());
 app.use((req, res, next) => {
+  req.lang = requestLang(req.cookies && req.cookies.lang);
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "same-origin");
   next();
@@ -657,20 +727,20 @@ app.get("/api/slots", async (req, res) => {
     const previewTaken = busyTimes(data, previewDate);
     preview = {
       date: previewDate,
-      dateLabel: formatHy(previewDate),
+      dateLabel: formatDate(previewDate, req.lang),
       slots: SLOTS.map((time) => ({ time, taken: previewTaken.has(time) })),
     };
   }
   res.json({
     date,
-    dateLabel: formatHy(date),
+    dateLabel: formatDate(date, req.lang),
     open,
     opensAt: open || !working ? "" : bookingOpenLabel(),
     closedMessage: open
       ? ""
       : working
-        ? `Հաջորդ օրվա գրանցումը բացվում է այսօր ժամը ${bookingOpenLabel()}-ին։`
-        : `Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է, իսկ գրանցումը բացվում է նախորդ օրը ժամը ${bookingOpenLabel()}-ին։`,
+        ? text(req.lang, "closedToday", { time: bookingOpenLabel() })
+        : text(req.lang, "closedWeekend", { time: bookingOpenLabel() }),
     capacity: SLOTS.length,
     booked: open ? taken.size : 0,
     slots: open ? SLOTS.map((time) => ({ time, taken: taken.has(time) })) : [],
@@ -680,53 +750,53 @@ app.get("/api/slots", async (req, res) => {
 
 app.post("/api/book", limitBookings, async (req, res) => {
   try {
-    const result = await withLock(() => startBooking(req.body || {}));
+    const result = await withLock(() => startBooking(req.body || {}, req.lang));
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Գրանցումը չհաջողվեց։ Կրկին փորձեք։" });
+    res.status(500).json({ error: text(req.lang, "bookFail") });
   }
 });
 
 app.post("/api/book/confirm", limitBookings, async (req, res) => {
   try {
-    const result = await withLock(() => confirmBooking(req.body || {}));
+    const result = await withLock(() => confirmBooking(req.body || {}, req.lang));
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Հաստատումը չհաջողվեց։ Կրկին փորձեք։" });
+    res.status(500).json({ error: text(req.lang, "confirmFail") });
   }
 });
 
 app.post("/api/mine", limitBookings, async (req, res) => {
-  const result = await findMine(req.body || {});
+  const result = await findMine(req.body || {}, req.lang);
   res.status(result.status).json(result.body);
 });
 
 app.post("/api/mine/cancel", limitBookings, async (req, res) => {
   try {
-    const result = await withLock(() => cancelMine(req.body || {}));
+    const result = await withLock(() => cancelMine(req.body || {}, req.lang));
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Չեղարկումը չհաջողվեց։" });
+    res.status(500).json({ error: text(req.lang, "cancelFail") });
   }
 });
 
 app.post("/api/mine/move", limitBookings, async (req, res) => {
   try {
-    const result = await withLock(() => moveMine(req.body || {}));
+    const result = await withLock(() => moveMine(req.body || {}, req.lang));
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Ժամը չփոխվեց։ Կրկին փորձեք։" });
+    res.status(500).json({ error: text(req.lang, "moveFail") });
   }
 });
 
 app.post("/api/admin/login", (req, res) => {
   const password = String((req.body || {}).password || "");
   if (!password || !safeEqual(password, ADMIN_PASSWORD)) {
-    return res.status(401).json({ error: "Գաղտնաբառը սխալ է։" });
+    return res.status(401).json({ error: text(req.lang, "badPassword") });
   }
   res.cookie("admin_session", sessionToken(), {
     httpOnly: true,
@@ -754,25 +824,25 @@ app.get("/api/admin/appointments", requireAdmin, async (req, res) => {
   const byTime = new Map(visible.map((item) => [item.time, item]));
   res.json({
     selectedDate: selected,
-    dateLabel: selected === "all" ? "Բոլոր օրերը" : formatHy(selected),
+    dateLabel: selected === "all" ? text(req.lang, "allDays") : formatDate(selected, req.lang),
     workingDay: selected === "all" ? false : isWorkingDay(selected),
     dates,
     capacity: SLOTS.length,
-    appointments: visible.map(publicAppointment),
+    appointments: visible.map((item) => publicAppointment(item, req.lang)),
     slots: selected === "all" ? [] : SLOTS.map((time) => ({
       time,
-      appointment: byTime.has(time) ? publicAppointment(byTime.get(time)) : null,
+      appointment: byTime.has(time) ? publicAppointment(byTime.get(time), req.lang) : null,
     })),
   });
 });
 
 app.post("/api/admin/appointments", requireAdmin, async (req, res) => {
   try {
-    const result = await withLock(() => createStaffBooking(req.body || {}));
+    const result = await withLock(() => createStaffBooking(req.body || {}, req.lang));
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Գրանցումը չհաջողվեց։ Կրկին փորձեք։" });
+    res.status(500).json({ error: text(req.lang, "bookFail") });
   }
 });
 
@@ -782,7 +852,7 @@ app.delete("/api/admin/appointments/:id", requireAdmin, async (req, res) => {
       const data = await readData();
       const next = data.appointments.filter((item) => item.id !== req.params.id);
       if (next.length === data.appointments.length) {
-        return { status: 404, body: { error: "Գրանցումը չի գտնվել։" } };
+        return { status: 404, body: { error: text(req.lang, "notFound") } };
       }
       data.appointments = next;
       await writeData(data);
@@ -791,7 +861,7 @@ app.delete("/api/admin/appointments/:id", requireAdmin, async (req, res) => {
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Չեղարկումը չհաջողվեց։" });
+    res.status(500).json({ error: text(req.lang, "cancelFail") });
   }
 });
 

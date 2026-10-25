@@ -27,7 +27,7 @@ body {
   min-height: 100dvh;
   color: var(--ink);
   background: var(--white);
-  font-family: "Noto Sans Armenian", "Segoe UI", sans-serif;
+  font-family: "Noto Sans", "Noto Sans Armenian", "Segoe UI", sans-serif;
   font-size: 17px;
   line-height: 1.55;
   -webkit-tap-highlight-color: transparent;
@@ -85,6 +85,24 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.03em; }
   background: var(--white);
 }
 .site-nav { gap: 6px; }
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.site-nav .lang-switch button {
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: transparent;
+}
+.site-nav .lang-switch button[aria-pressed="true"] {
+  background: var(--white);
+  color: var(--navy);
+}
 .site-nav a, .site-nav button {
   color: var(--white);
   text-decoration: none;

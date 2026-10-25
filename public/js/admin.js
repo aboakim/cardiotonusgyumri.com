@@ -4,7 +4,7 @@ togglePassword.addEventListener("click", () => {
   const visible = passwordInput.type === "password";
   passwordInput.type = visible ? "text" : "password";
   togglePassword.setAttribute("aria-pressed", visible ? "true" : "false");
-  togglePassword.setAttribute("aria-label", visible ? "Թաքցնել գաղտնաբառը" : "Ցույց տալ գաղտնաբառը");
+  togglePassword.setAttribute("aria-label", I18N.t(visible ? "hidePassword" : "showPassword"));
   togglePassword.querySelector(".eye-open").hidden = visible;
   togglePassword.querySelector(".eye-shut").hidden = !visible;
   passwordInput.focus();
@@ -52,7 +52,7 @@ function cancelButton(item) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "linkish";
-  button.textContent = "Չեղարկել";
+  button.textContent = I18N.t("cancel");
   button.addEventListener("click", () => cancelAppointment(item));
   return button;
 }
@@ -66,22 +66,20 @@ function renderSchedule() {
     ? 0
     : currentData.slots.filter((slot) => !slot.appointment).length;
   count.textContent = currentData.selectedDate === "all"
-    ? `${booked.length} գրանցում`
-    : `${currentData.appointments.length} գրանցված · ${free} ազատ`;
+    ? I18N.t("countAll", { count: booked.length })
+    : I18N.t("countDay", { booked: currentData.appointments.length, free });
 
   if (currentData.selectedDate === "all") {
     staffForm.hidden = true;
     empty.hidden = booked.length > 0;
-    empty.textContent = query ? "Այդպիսի գրանցում չկա։" : "Գրանցումներ դեռ չկան։";
+    empty.textContent = query ? I18N.t("emptySearch") : I18N.t("emptyAll");
     if (booked.length) appendPeopleTable(booked, true);
     return;
   }
 
   const canAdd = currentData.workingDay && currentData.selectedDate >= todayIso();
   staffForm.hidden = !canAdd;
-  staffNote.textContent = canAdd
-    ? "Ազատ ժամը կրկին բացվում է, երբ գրանցումը չեղարկում եք։"
-    : "Այս օրը աշխատանքային չէ կամ արդեն անցել է։";
+  staffNote.textContent = canAdd ? I18N.t("staffOpen") : I18N.t("staffClosed");
   staffTime.replaceChildren();
   currentData.slots.filter((slot) => !slot.appointment).forEach((slot) => {
     const option = document.createElement("option");
@@ -92,13 +90,13 @@ function renderSchedule() {
   staffForm.querySelector("button").disabled = staffTime.options.length === 0;
 
   empty.hidden = booked.length > 0;
-  empty.textContent = query ? "Այդպիսի գրանցում չկա։" : "Այս օրվա համար գրանցում չկա։";
+  empty.textContent = query ? I18N.t("emptySearch") : I18N.t("emptyDay");
   if (booked.length) appendPeopleTable(booked, false);
   const freeTimes = currentData.slots.filter((slot) => !slot.appointment).map((slot) => slot.time);
   if (!query && freeTimes.length) {
     const note = document.createElement("p");
     note.className = "empty";
-    note.textContent = `Ազատ ժամեր՝ ${freeTimes.join(", ")}`;
+    note.textContent = I18N.t("freeTimes", { times: freeTimes.join(", ") });
     schedule.appendChild(note);
   }
 }
@@ -106,7 +104,7 @@ function renderSchedule() {
 function appendPeopleTable(items, includeDate) {
   const table = document.createElement("table");
   const head = document.createElement("tr");
-  ["Ժամ", "Անուն", "Ազգանուն", "Հեռախոս", ""].forEach((label) => {
+  [I18N.t("time"), I18N.t("firstName"), I18N.t("lastName"), I18N.t("phoneShort"), ""].forEach((label) => {
     const th = document.createElement("th");
     th.textContent = label;
     head.appendChild(th);
@@ -157,19 +155,22 @@ async function loadAppointments(date) {
   }
   const data = await response.json();
   if (!response.ok) {
-    showError(adminError, data.error || "Ցանկը չբեռնվեց։");
+    showError(adminError, data.error || I18N.t("listFail"));
     return;
   }
   loginCard.hidden = true;
   dashboard.hidden = false;
   currentData = data;
-  title.textContent = data.dateLabel;
+  title.textContent = data.selectedDate === "all" ? I18N.t("allDays") : I18N.formatDate(data.selectedDate);
   if (data.selectedDate !== "all") dateInput.value = data.selectedDate;
   renderSchedule();
 }
 
 async function cancelAppointment(item) {
-  const confirmed = window.confirm(`Չեղարկե՞լ ${item.time} այցը՝ ${item.firstName} ${item.lastName}։`);
+  const confirmed = window.confirm(I18N.t("cancelVisit", {
+    time: item.time,
+    name: `${item.firstName} ${item.lastName}`,
+  }));
   if (!confirmed) return;
   const response = await fetch(`/api/admin/appointments/${item.id}`, {
     method: "DELETE",
@@ -177,7 +178,7 @@ async function cancelAppointment(item) {
   });
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    showError(adminError, data.error || "Չեղարկումը չհաջողվեց։");
+    showError(adminError, data.error || I18N.t("cancelFail"));
     return;
   }
   showError(adminError, "");
@@ -195,7 +196,7 @@ loginForm.addEventListener("submit", async (event) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    showError(loginError, data.error || "Մուտքը չհաջողվեց։");
+    showError(loginError, data.error || I18N.t("loginFail"));
     return;
   }
   loginForm.reset();
@@ -219,7 +220,7 @@ staffForm.addEventListener("submit", async (event) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    showError(staffError, data.error || "Գրանցումը չհաջողվեց։");
+    showError(staffError, data.error || I18N.t("bookFail"));
     return;
   }
   staffForm.reset();
@@ -240,5 +241,14 @@ document.querySelector("#logout").addEventListener("click", async () => {
 });
 
 loadAppointments().catch(() => {
-  showError(loginError, "Կապը չհաջողվեց։");
+  showError(loginError, I18N.t("network"));
+});
+
+window.addEventListener("cardiotonus-lang", () => {
+  const visible = passwordInput.type === "text";
+  togglePassword.setAttribute("aria-label", I18N.t(visible ? "hidePassword" : "showPassword"));
+  if (!currentData) return;
+  title.textContent = currentData.selectedDate === "all" ? I18N.t("allDays") : I18N.formatDate(currentData.selectedDate);
+  renderSchedule();
+  loadAppointments(currentFilter || dateInput.value);
 });

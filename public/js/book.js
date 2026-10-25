@@ -73,13 +73,17 @@ function renderSlots() {
   grid.replaceChildren();
   previewOnly = !schedule.open && Boolean(schedule.preview);
   const slots = activeSlots();
-  dateNode.textContent = previewOnly ? `${schedule.preview.dateLabel} · օրինակ` : schedule.dateLabel;
+  const shownDate = previewOnly ? I18N.formatDate(schedule.preview.date) : I18N.formatDate(schedule.date);
+  dateNode.textContent = previewOnly ? I18N.t("previewMark", { date: shownDate }) : shownDate;
   demoBanner.hidden = !previewOnly;
   if (previewOnly) {
-    demoBanner.textContent = `Դեմո։ վաղը՝ ${schedule.dateLabel}, գրանցել հնարավոր չէ։ Ներքևում ${schedule.preview.dateLabel} օրվա օրինակն է. զբաղված ժամերը փակ են։`;
+    demoBanner.textContent = I18N.t("demo", {
+      tomorrow: I18N.formatDate(schedule.date),
+      sample: I18N.formatDate(schedule.preview.date),
+    });
   }
   if (!schedule.open && !previewOnly) {
-    countNode.textContent = schedule.opensAt ? `Կբացվի ժամը ${schedule.opensAt}-ին` : "Ընդունելություն չկա";
+    countNode.textContent = schedule.opensAt ? I18N.t("opensAt", { time: schedule.opensAt }) : I18N.t("noReception");
     legend.hidden = true;
     grid.hidden = true;
     bookingCard.hidden = true;
@@ -91,10 +95,10 @@ function renderSlots() {
   bookingCard.hidden = false;
   const freeCount = slots.filter((slot) => !slot.taken).length;
   countNode.textContent = previewOnly
-    ? `Օրինակ՝ ազատ է ${freeCount} տեղ 15-ից`
+    ? I18N.t("exampleFree", { count: freeCount })
     : freeCount
-      ? `Ազատ է ${freeCount} տեղ 15-ից`
-      : "Բոլոր 15 տեղերը զբաղված են";
+      ? I18N.t("freeCount", { count: freeCount })
+      : I18N.t("allFull");
 
   slots.forEach((slot) => {
     const button = document.createElement("button");
@@ -105,11 +109,11 @@ function renderSlots() {
     const time = document.createElement("span");
     time.textContent = slot.time;
     const note = document.createElement("small");
-    note.textContent = slot.taken ? "Զբաղված" : "30 րոպե";
+    note.textContent = slot.taken ? I18N.t("busy") : I18N.t("minutes");
     button.append(time, note);
     button.addEventListener("click", () => {
       selectedTime = slot.time;
-      chosen.textContent = `Ընտրված ժամը՝ ${slot.time}`;
+      chosen.textContent = I18N.t("chosenTime", { time: slot.time });
       submit.disabled = false;
       showError(errorNode, "");
       renderSlots();
@@ -122,13 +126,13 @@ function renderSlots() {
 
   if (!slots.some((slot) => slot.time === selectedTime && !slot.taken)) {
     selectedTime = null;
-    chosen.textContent = "Ժամը դեռ ընտրված չէ";
+    chosen.textContent = I18N.t("chosenEmpty");
     submit.disabled = true;
   } else {
-    chosen.textContent = `Ընտրված ժամը՝ ${selectedTime}`;
+    chosen.textContent = I18N.t("chosenTime", { time: selectedTime });
     submit.disabled = false;
   }
-  showError(slotsMessage, freeCount || previewOnly ? "" : "Վաղվա համար ազատ տեղ չի մնացել։");
+  showError(slotsMessage, freeCount || previewOnly ? "" : I18N.t("noSlotsLeft"));
 }
 
 async function loadSlots() {
@@ -151,12 +155,12 @@ function draftBody() {
 async function requestCode() {
   showError(errorNode, "");
   if (previewOnly) {
-    showError(errorNode, "Սա միայն օրինակ է։ Գրանցումը կբացվի աշխատանքային օրվանից առաջ։");
+    showError(errorNode, I18N.t("previewOnly"));
     submit.disabled = false;
     return;
   }
   if (!selectedTime || !schedule) {
-    showError(errorNode, "Ընտրեք ազատ ժամը։");
+    showError(errorNode, I18N.t("pickTime"));
     return;
   }
   submit.disabled = true;
@@ -169,7 +173,7 @@ async function requestCode() {
     });
     const data = await response.json();
     if (!response.ok) {
-      showError(errorNode, data.error || "Գրանցումը չհաջողվեց։");
+      showError(errorNode, data.error || I18N.t("bookFail"));
       if (data.field && form.elements[data.field]) form.elements[data.field].focus();
       if (response.status === 409) await loadSlots();
       else submit.disabled = false;
@@ -177,10 +181,10 @@ async function requestCode() {
     }
     form.hidden = true;
     success.hidden = false;
-    successCopy.textContent = `${data.appointment.firstName} ${data.appointment.lastName}, ${data.appointment.dateLabel}, ժամը ${data.appointment.time}։ Խնդրում ենք ներկայանալ Cardiotonus կլինիկա՝ Գարեգին Նժդեհ 5/8։`;
+    showSuccess(data.appointment);
     success.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch {
-    showError(errorNode, "Կապը չհաջողվեց։ Կրկին փորձեք։");
+    showError(errorNode, I18N.t("network"));
     submit.disabled = false;
   }
 }
@@ -210,15 +214,15 @@ codeForm.addEventListener("submit", async (event) => {
     });
     const data = await response.json();
     if (!response.ok) {
-      showError(codeError, data.error || "Հաստատումը չհաջողվեց։");
+      showError(codeError, data.error || I18N.t("confirmFail"));
       button.disabled = false;
       return;
     }
     codeForm.hidden = true;
     success.hidden = false;
-    successCopy.textContent = `${data.appointment.firstName} ${data.appointment.lastName}, ${data.appointment.dateLabel}, ժամը ${data.appointment.time}։ Խնդրում ենք ներկայանալ Cardiotonus կլինիկա՝ Գարեգին Նժդեհ 5/8։`;
+    showSuccess(data.appointment);
   } catch {
-    showError(codeError, "Կապը չհաջողվեց։ Կրկին փորձեք։");
+    showError(codeError, I18N.t("network"));
     button.disabled = false;
   }
 });
@@ -245,13 +249,19 @@ function renderMine(data) {
   showError(mineActionError, "");
   if (!data.found) {
     mineEmpty.hidden = false;
+    mineEmpty.dataset.state = "empty";
+    mineEmpty.textContent = I18N.t("mineEmpty");
     mineCard.hidden = true;
     return;
   }
+  mineEmpty.dataset.state = "";
   mineEmpty.hidden = true;
   mineCard.hidden = false;
   mineWho.textContent = `${data.appointment.firstName} ${data.appointment.lastName}`;
-  mineWhen.textContent = `${data.appointment.dateLabel}, ժամը ${data.appointment.time}`;
+  mineWhen.textContent = I18N.t("mineWhen", {
+    date: I18N.formatDate(data.appointment.date),
+    time: data.appointment.time,
+  });
   mineSlots.replaceChildren();
   data.slots.forEach((slot) => {
     const button = document.createElement("button");
@@ -261,7 +271,7 @@ function renderMine(data) {
     const time = document.createElement("span");
     time.textContent = slot.time;
     const note = document.createElement("small");
-    note.textContent = slot.current ? "Ձեր ժամը" : slot.taken ? "Զբաղված" : "Ընտրել";
+    note.textContent = slot.current ? I18N.t("yourTime") : slot.taken ? I18N.t("busy") : I18N.t("choose");
     button.append(time, note);
     if (!slot.taken && !slot.current) {
       button.addEventListener("click", () => moveMine(slot.time));
@@ -278,7 +288,7 @@ async function loadMine() {
   });
   const data = await response.json();
   if (!response.ok) {
-    showError(mineActionError, data.error || "Չհաջողվեց բեռնել։");
+    showError(mineActionError, data.error || I18N.t("loadFail"));
     return;
   }
   renderMine(data);
@@ -295,14 +305,14 @@ minePhoneForm.addEventListener("submit", async (event) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    showError(document.querySelector("#mine-phone-error"), data.error || "Չհաջողվեց ստուգել։");
+    showError(document.querySelector("#mine-phone-error"), data.error || I18N.t("checkFail"));
     return;
   }
   renderMine(data);
 });
 
 document.querySelector("#mine-cancel").addEventListener("click", async () => {
-  const confirmed = window.confirm("Չեղարկե՞լ այս գրանցումը։");
+  const confirmed = window.confirm(I18N.t("cancelAsk"));
   if (!confirmed) return;
   const response = await fetch("/api/mine/cancel", {
     method: "POST",
@@ -311,12 +321,13 @@ document.querySelector("#mine-cancel").addEventListener("click", async () => {
   });
   const data = await response.json();
   if (!response.ok) {
-    showError(mineActionError, data.error || "Չեղարկումը չհաջողվեց։");
+    showError(mineActionError, data.error || I18N.t("cancelFail"));
     return;
   }
   mineCard.hidden = true;
   mineEmpty.hidden = false;
-  mineEmpty.textContent = "Գրանցումը չեղարկված է։ Այս համարով կարող եք կատարել նոր ամրագրում։";
+  mineEmpty.dataset.state = "cancelled";
+  mineEmpty.textContent = I18N.t("cancelled");
 });
 
 async function moveMine(time) {
@@ -328,15 +339,43 @@ async function moveMine(time) {
   });
   const data = await response.json();
   if (!response.ok) {
-    showError(mineActionError, data.error || "Ժամը չփոխվեց։");
+    showError(mineActionError, data.error || I18N.t("moveFail"));
     return;
   }
   renderMine({ found: true, ...data });
 }
 
+function showSuccess(appointment) {
+  success.hidden = false;
+  success.dataset.date = appointment.date;
+  success.dataset.time = appointment.time;
+  success.dataset.name = `${appointment.firstName} ${appointment.lastName}`;
+  successCopy.textContent = I18N.t("successCopy", {
+    name: success.dataset.name,
+    date: I18N.formatDate(appointment.date),
+    time: appointment.time,
+  });
+}
+
 loadSlots().catch(() => {
-  dateNode.textContent = "Չհաջողվեց բեռնել";
-  showError(slotsMessage, "Ժամերը չբեռնվեցին։ Թարմացրեք էջը։");
+  dateNode.textContent = I18N.t("dateLoadFail");
+  showError(slotsMessage, I18N.t("slotsLoadFail"));
+});
+
+window.addEventListener("cardiotonus-lang", () => {
+  if (schedule) renderSlots();
+  else dateNode.textContent = I18N.t("loading");
+  if (!success.hidden && success.dataset.date) {
+    successCopy.textContent = I18N.t("successCopy", {
+      name: success.dataset.name,
+      date: I18N.formatDate(success.dataset.date),
+      time: success.dataset.time,
+    });
+  }
+  if (mineEmpty.dataset.state === "cancelled") mineEmpty.textContent = I18N.t("cancelled");
+  else if (!mineEmpty.hidden) mineEmpty.textContent = I18N.t("mineEmpty");
+  if (minePhone && !mineCard.hidden) loadMine();
+  loadSlots().catch(() => {});
 });
 
 setInterval(() => {

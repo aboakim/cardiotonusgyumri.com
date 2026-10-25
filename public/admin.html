@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hy">
+<html lang="hy" data-title-key="pageTitleAdmin">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
@@ -9,7 +9,7 @@
   <link rel="icon" href="/images/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -20,8 +20,12 @@
         <span>cardiotonus</span>
       </a>
       <nav class="site-nav">
-        <a href="/">Գրանցում</a>
-        <a href="/admin" aria-current="page">Ադմին</a>
+        <div class="lang-switch" role="group" data-i18n-aria="language">
+          <button type="button" data-set-lang="hy" aria-pressed="true">ՀԱՅ</button>
+          <button type="button" data-set-lang="ru">РУС</button>
+        </div>
+        <a href="/" data-i18n="showBook">Գրանցում</a>
+        <a href="/admin" data-i18n="adminNav" aria-current="page">Ադմին</a>
       </nav>
     </div>
   </header>
@@ -30,15 +34,15 @@
     <div class="container admin-wrap">
       <section id="login-card" class="booking-card login-card">
         <form id="login-form">
-          <p class="eyebrow">Անձնակազմ</p>
-          <h1>Ադմին վահանակ</h1>
+          <p class="eyebrow" data-i18n="staff">Անձնակազմ</p>
+          <h1 data-i18n="adminHeading">Ադմին վահանակ</h1>
           <div class="ecg-line" aria-hidden="true"></div>
-          <p class="lead">Այստեղից կարելի է տեսնել օրվա գրանցումները, ավելացնել տեղ և չեղարկել։ Ամեն գրանցում պահվում է 1 ամիս, հետո ինքնըստինքյան վերանում է։</p>
+          <p class="lead" data-i18n="adminLead">Այստեղից կարելի է տեսնել օրվա գրանցումները, ավելացնել տեղ և չեղարկել։ Ամեն գրանցում պահվում է 1 ամիս, հետո ինքնըստինքյան վերանում է։</p>
           <label>
-            Գաղտնաբառ
+            <span data-i18n="password">Գաղտնաբառ</span>
             <span class="password-field">
               <input id="password" type="password" autocomplete="current-password" required>
-              <button type="button" id="toggle-password" aria-label="Ցույց տալ գաղտնաբառը" aria-pressed="false">
+              <button type="button" id="toggle-password" data-i18n-aria="showPassword" aria-label="Ցույց տալ գաղտնաբառը" aria-pressed="false">
                 <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -53,28 +57,28 @@
             </span>
           </label>
           <p id="login-error" class="form-error" role="alert" hidden></p>
-          <button class="button button-full" type="submit">Մուտք</button>
+          <button class="button button-full" data-i18n="login" type="submit">Մուտք</button>
         </form>
       </section>
 
       <section id="dashboard" class="dashboard" hidden>
         <div class="dashboard-head">
           <div>
-            <p class="eyebrow">Գրանցվածներ</p>
+            <p class="eyebrow" data-i18n="registered">Գրանցվածներ</p>
             <h1 id="dash-title">Այցելություններ</h1>
             <p id="dash-count" class="lead"></p>
           </div>
           <div class="dash-actions">
             <label class="date-label">
-              Օր
+              <span data-i18n="day">Օր</span>
               <input id="admin-date" type="date">
             </label>
             <label class="date-label">
-              Փնտրել
-              <input id="admin-search" type="search" placeholder="Անուն կամ ազգանուն">
+              <span data-i18n="search">Փնտրել</span>
+              <input id="admin-search" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="Անուն կամ ազգանուն">
             </label>
-            <button id="show-all" class="button button-light" type="button">Բոլորը</button>
-            <button id="logout" class="button button-ghost" type="button">Ելք</button>
+            <button id="show-all" class="button button-light" data-i18n="all" type="button">Բոլորը</button>
+            <button id="logout" class="button button-ghost" data-i18n="logout" type="button">Ելք</button>
           </div>
         </div>
         <div class="admin-grid">
@@ -83,32 +87,33 @@
             <p id="empty-state" class="empty" hidden>Այս օրվա համար գրանցում չկա։</p>
           </div>
           <form id="staff-form" class="booking-card staff-form">
-            <h2>Ավելացնել գրանցում</h2>
+            <h2 data-i18n="addBooking">Ավելացնել գրանցում</h2>
             <p class="lead" id="staff-note">Ընտրեք ազատ ժամը և լրացրեք տվյալները։</p>
             <label>
-              Ժամ
+              <span data-i18n="time">Ժամ</span>
               <select id="staff-time" name="time" required></select>
             </label>
             <label>
-              Անուն
+              <span data-i18n="firstName">Անուն</span>
               <input id="staff-first" name="firstName" maxlength="40" required>
             </label>
             <label>
-              Ազգանուն
+              <span data-i18n="lastName">Ազգանուն</span>
               <input id="staff-last" name="lastName" maxlength="40" required>
             </label>
             <label>
-              Հեռախոս
+              <span data-i18n="phoneShort">Հեռախոս</span>
               <input id="staff-phone" name="phone" type="tel" placeholder="098 00 00 00" required>
             </label>
             <p id="staff-error" class="form-error" role="alert" hidden></p>
-            <button class="button button-full" type="submit">Գրանցել</button>
+            <button class="button button-full" data-i18n="bookVerb" type="submit">Գրանցել</button>
           </form>
         </div>
         <p id="admin-error" class="form-error" role="alert" hidden></p>
       </section>
     </div>
   </main>
+  <script src="/js/i18n.js"></script>
   <script src="/js/admin.js"></script>
 </body>
 </html>
