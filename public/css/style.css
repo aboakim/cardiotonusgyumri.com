@@ -617,8 +617,8 @@ td { font-weight: 700; color: var(--ink); }
 @media (max-width: 640px) {
   .container { width: min(1140px, calc(100% - 32px)); }
   .header-inner { flex-wrap: wrap; padding: 8px 0; }
-  .brand { font-size: 22px; }
-  .brand img { width: 40px; height: 40px; }
+  .brand { font-size: 24px; }
+  .brand img { width: 56px; height: 56px; }
   .site-nav { width: 100%; }
   .site-nav a, .site-nav button { font-size: 16px; }
   .slot-grid { grid-template-columns: repeat(2, 1fr); }
