@@ -16,7 +16,7 @@ const loginError = document.querySelector("#login-error");
 const dashboard = document.querySelector("#dashboard");
 const title = document.querySelector("#dash-title");
 const count = document.querySelector("#dash-count");
-const dateInput = document.querySelector("#admin-date");
+const dayLabel = document.querySelector("#day-label");
 const searchInput = document.querySelector("#admin-search");
 const schedule = document.querySelector("#schedule-wrap");
 const empty = document.querySelector("#empty-state");
@@ -83,7 +83,7 @@ function renderSchedule() {
     staffForm.hidden = true;
     empty.hidden = booked.length > 0;
     empty.textContent = query ? I18N.t("emptySearch") : I18N.t("emptyAll");
-    if (booked.length) appendPeopleTable(booked, true);
+    if (booked.length) appendPeopleList(booked, true);
     return;
   }
 
@@ -104,7 +104,7 @@ function renderSchedule() {
 
   empty.hidden = booked.length > 0;
   empty.textContent = query ? I18N.t("emptySearch") : I18N.t("emptyDay");
-  if (booked.length) appendPeopleTable(booked, false);
+  if (booked.length) appendPeopleList(booked, false);
   const freeTimes = currentData.slots.filter((slot) => !slot.appointment).map((slot) => slot.time);
   if (!query && freeTimes.length) {
     const note = document.createElement("p");
@@ -114,51 +114,85 @@ function renderSchedule() {
   }
 }
 
-function appendPeopleTable(items, includeDate) {
-  const table = document.createElement("table");
-  const head = document.createElement("tr");
-  [I18N.t("time"), I18N.t("firstName"), I18N.t("lastName"), I18N.t("phoneShort"), ""].forEach((label) => {
-    const th = document.createElement("th");
-    th.textContent = label;
-    head.appendChild(th);
-  });
-  const thead = document.createElement("thead");
-  thead.appendChild(head);
-  const tbody = document.createElement("tbody");
+function shortDate(iso) {
+  const normal = normalizeIso(iso);
+  if (!normal) return iso || "";
+  const [year, month, day] = normal.split("-");
+  return `${day}.${month}.${year}`;
+}
+
+function appendPeopleList(items, includeDate) {
+  const list = document.createElement("div");
+  list.className = "visit-list";
   items.forEach((item) => {
-    const row = document.createElement("tr");
-    const time = document.createElement("td");
-    time.textContent = includeDate ? `${item.date} ${item.time}` : item.time;
-    const first = document.createElement("td");
-    first.className = "name-cell";
-    first.textContent = item.firstName;
-    const last = document.createElement("td");
-    last.className = "name-cell";
-    last.textContent = item.lastName;
-    const phone = document.createElement("td");
-    phone.appendChild(phoneLink(item.phone));
-    const action = document.createElement("td");
-    action.appendChild(cancelButton(item));
-    if (freshIds.has(item.id)) row.classList.add("row-fresh");
-    row.append(time, first, last, phone, action);
-    tbody.appendChild(row);
+    const card = document.createElement("article");
+    card.className = "visit-card";
+    if (freshIds.has(item.id)) card.classList.add("row-fresh");
+    const main = document.createElement("div");
+    main.className = "visit-main";
+    const time = document.createElement("strong");
+    time.className = "visit-time";
+    time.textContent = includeDate ? `${shortDate(item.date)} ${item.time}` : item.time;
+    const who = document.createElement("div");
+    who.className = "visit-who";
+    const name = document.createElement("p");
+    name.className = "visit-name";
+    name.textContent = `${item.firstName} ${item.lastName}`;
+    const phone = phoneLink(item.phone);
+    phone.className = "visit-phone";
+    who.append(name, phone);
+    main.append(time, who);
+    card.append(main, cancelButton(item));
+    list.appendChild(card);
   });
-  table.append(thead, tbody);
-  schedule.appendChild(table);
-  const freshRow = table.querySelector(".row-fresh");
+  schedule.appendChild(list);
+  const freshRow = list.querySelector(".row-fresh");
   const typing = staffForm.contains(document.activeElement) || document.activeElement === searchInput;
   if (freshRow && !typing) freshRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 
 function todayIso() {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Yerevan",
+    calendar: "gregory",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(now);
-  return parts;
+  }).formatToParts(new Date());
+  const read = (type) => parts.find((part) => part.type === type).value;
+  let year = Number(read("year"));
+  if (year >= 2400) year -= 543;
+  return `${year}-${read("month").padStart(2, "0")}-${read("day").padStart(2, "0")}`;
+}
+
+function normalizeIso(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "";
+  let year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year >= 2400) year -= 543;
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return "";
+  return check.toISOString().slice(0, 10);
+}
+
+function shiftIso(iso, days) {
+  const normal = normalizeIso(iso) || todayIso();
+  const [year, month, day] = normal.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+function showDayLabel(selected) {
+  const iso = selected === "all" ? "all" : normalizeIso(selected);
+  if (!iso || iso === "all") {
+    dayLabel.textContent = I18N.t("allDays");
+    title.textContent = I18N.t("allDays");
+    return;
+  }
+  const pretty = I18N.formatDate(iso);
+  dayLabel.textContent = pretty;
+  title.textContent = iso === todayIso() ? I18N.t("todayBookings") : pretty;
 }
 
 async function loadAppointments(date, options = {}) {
@@ -194,8 +228,7 @@ async function loadAppointments(date, options = {}) {
   loginCard.hidden = true;
   dashboard.hidden = false;
   currentData = data;
-  title.textContent = data.selectedDate === "all" ? I18N.t("allDays") : I18N.formatDate(data.selectedDate);
-  if (data.selectedDate !== "all" && dateInput.value !== data.selectedDate) dateInput.value = data.selectedDate;
+  showDayLabel(data.selectedDate);
   renderSchedule();
 }
 
@@ -203,7 +236,7 @@ async function refreshQuiet() {
   if (dashboard.hidden || document.hidden || refreshBusy) return;
   refreshBusy = true;
   try {
-    await loadAppointments(currentFilter || dateInput.value, { quiet: true });
+    await loadAppointments(currentFilter || todayIso(), { quiet: true });
   } catch {
   } finally {
     refreshBusy = false;
@@ -226,7 +259,7 @@ async function cancelAppointment(item) {
     return;
   }
   showError(adminError, "");
-  await loadAppointments(currentFilter || dateInput.value);
+  await loadAppointments(currentFilter || todayIso());
 }
 
 loginForm.addEventListener("submit", async (event) => {
@@ -244,7 +277,7 @@ loginForm.addEventListener("submit", async (event) => {
     return;
   }
   loginForm.reset();
-  await loadAppointments();
+  await loadAppointments(todayIso());
 });
 
 staffForm.addEventListener("submit", async (event) => {
@@ -255,7 +288,7 @@ staffForm.addEventListener("submit", async (event) => {
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      date: dateInput.value,
+      date: currentData && currentData.selectedDate !== "all" ? currentData.selectedDate : todayIso(),
       time: staffTime.value,
       firstName: staffForm.firstName.value,
       lastName: staffForm.lastName.value,
@@ -269,12 +302,18 @@ staffForm.addEventListener("submit", async (event) => {
   }
   staffForm.reset();
   showError(staffError, "");
-  await loadAppointments(dateInput.value);
+  await loadAppointments(currentData && currentData.selectedDate !== "all" ? currentData.selectedDate : todayIso());
 });
 
-dateInput.addEventListener("change", () => {
-  if (dateInput.value) loadAppointments(dateInput.value);
+document.querySelector("#day-prev").addEventListener("click", () => {
+  const base = currentData && currentData.selectedDate !== "all" ? currentData.selectedDate : todayIso();
+  loadAppointments(shiftIso(base, -1));
 });
+document.querySelector("#day-next").addEventListener("click", () => {
+  const base = currentData && currentData.selectedDate !== "all" ? currentData.selectedDate : todayIso();
+  loadAppointments(shiftIso(base, 1));
+});
+document.querySelector("#day-today").addEventListener("click", () => loadAppointments(todayIso()));
 searchInput.addEventListener("input", renderSchedule);
 document.querySelector("#show-all").addEventListener("click", () => loadAppointments("all"));
 document.querySelector("#logout").addEventListener("click", async () => {
@@ -284,7 +323,7 @@ document.querySelector("#logout").addEventListener("click", async () => {
   currentData = null;
 });
 
-loadAppointments().catch(() => {
+loadAppointments(todayIso()).catch(() => {
   showError(loginError, I18N.t("network"));
 });
 
@@ -297,7 +336,7 @@ window.addEventListener("cardiotonus-lang", () => {
   const visible = passwordInput.type === "text";
   togglePassword.setAttribute("aria-label", I18N.t(visible ? "hidePassword" : "showPassword"));
   if (!currentData) return;
-  title.textContent = currentData.selectedDate === "all" ? I18N.t("allDays") : I18N.formatDate(currentData.selectedDate);
+  showDayLabel(currentData.selectedDate);
   renderSchedule();
-  loadAppointments(currentFilter || dateInput.value);
+  loadAppointments(currentFilter || todayIso());
 });

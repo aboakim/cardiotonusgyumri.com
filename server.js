@@ -134,15 +134,30 @@ const DATA_KEY = "cardiotonus:data";
 let writeChain = Promise.resolve();
 
 function calendarDate(offset = 0) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: TZ,
+    calendar: "gregory",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(new Date());
   const read = (type) => Number(parts.find((part) => part.type === type).value);
-  const utc = new Date(Date.UTC(read("year"), read("month") - 1, read("day") + offset));
+  let year = read("year");
+  if (year >= 2400) year -= 543;
+  const utc = new Date(Date.UTC(year, read("month") - 1, read("day") + offset));
   return utc.toISOString().slice(0, 10);
+}
+
+function normalizeIsoDate(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "";
+  let year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year >= 2400) year -= 543;
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return "";
+  return check.toISOString().slice(0, 10);
 }
 
 const BOOKING_OPEN_HOUR = 19;
@@ -674,9 +689,9 @@ async function moveMine(body, lang) {
 }
 
 async function createStaffBooking(body, lang) {
-  const date = String(body.date || "");
+  const date = normalizeIsoDate(body.date);
   const time = String(body.time || "");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !isWorkingDay(date)) {
+  if (!date || !isWorkingDay(date)) {
     return { status: 400, body: { error: text(lang, "weekdaysOnly") } };
   }
   if (date < calendarDate(0)) {
@@ -880,12 +895,12 @@ app.post("/api/admin/logout", (req, res) => {
 });
 
 app.get("/api/admin/appointments", requireAdmin, async (req, res) => {
-  const requested = String(req.query.date || nextWorkingDate(0));
+  const requested = String(req.query.date || calendarDate(0));
   const data = (await readData()).appointments.slice().sort((a, b) => {
     return a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date);
   });
   const dates = [...new Set(data.map((item) => item.date))];
-  const selected = requested === "all" ? "all" : /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : nextWorkingDate(0);
+  const selected = requested === "all" ? "all" : normalizeIsoDate(requested) || calendarDate(0);
   const visible = selected === "all" ? data : data.filter((item) => item.date === selected);
   const byTime = new Map(visible.map((item) => [item.time, item]));
   res.setHeader("Cache-Control", "no-store");

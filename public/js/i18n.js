@@ -103,6 +103,10 @@ const STRINGS = {
     listFail: "Ցանկը չբեռնվեց։",
     loginFail: "Մուտքը չհաջողվեց։",
     allDays: "Բոլոր օրերը",
+    todayBookings: "Այսօրվա գրանցումներ",
+    todayBtn: "Այսօր",
+    prevDay: "Նախորդ օր",
+    nextDay: "Հաջորդ օր",
   },
   ru: {
     language: "Язык",
@@ -208,6 +212,10 @@ const STRINGS = {
     listFail: "Список не загрузился.",
     loginFail: "Не удалось войти.",
     allDays: "Все дни",
+    todayBookings: "Записи на сегодня",
+    todayBtn: "Сегодня",
+    prevDay: "Предыдущий день",
+    nextDay: "Следующий день",
   },
 };
 

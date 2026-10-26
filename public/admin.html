@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=20261026">
+  <link rel="stylesheet" href="/css/style.css?v=20261026d">
 </head>
 <body>
   <header class="site-header">
@@ -77,16 +77,20 @@
             <p id="dash-count" class="lead"></p>
           </div>
           <div class="dash-actions">
-            <label class="date-label">
-              <span data-i18n="day">Օր</span>
-              <input id="admin-date" type="date">
-            </label>
-            <label class="date-label">
+            <div class="day-switch" role="group" data-i18n-aria="day">
+              <button type="button" id="day-prev" class="day-step" data-i18n-aria="prevDay" aria-label="Նախորդ օր">‹</button>
+              <p id="day-label" class="day-label">…</p>
+              <button type="button" id="day-next" class="day-step" data-i18n-aria="nextDay" aria-label="Հաջորդ օր">›</button>
+            </div>
+            <div class="dash-buttons">
+              <button id="day-today" class="button button-light" data-i18n="todayBtn" type="button">Այսօր</button>
+              <button id="show-all" class="button button-light" data-i18n="all" type="button">Բոլորը</button>
+              <button id="logout" class="button button-ghost" data-i18n="logout" type="button">Ելք</button>
+            </div>
+            <label class="date-label search-label">
               <span data-i18n="search">Փնտրել</span>
-              <input id="admin-search" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="Անուն կամ ազգանուն">
+              <input id="admin-search" type="search" enterkeyhint="search" data-i18n-placeholder="searchPlaceholder" placeholder="Անուն կամ ազգանուն">
             </label>
-            <button id="show-all" class="button button-light" data-i18n="all" type="button">Բոլորը</button>
-            <button id="logout" class="button button-ghost" data-i18n="logout" type="button">Ելք</button>
           </div>
         </div>
         <div class="admin-grid">
@@ -111,7 +115,7 @@
             </label>
             <label>
               <span data-i18n="phoneShort">Հեռախոս</span>
-              <input id="staff-phone" name="phone" type="tel" placeholder="098 ** ** **" required>
+              <input id="staff-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done" placeholder="098000000" required>
             </label>
             <p id="staff-error" class="form-error" role="alert" hidden></p>
             <button class="button button-full" data-i18n="bookVerb" type="submit">Գրանցել</button>
@@ -122,6 +126,6 @@
     </div>
   </main>
   <script src="/js/i18n.js"></script>
-  <script src="/js/admin.js?v=20261026"></script>
+  <script src="/js/admin.js?v=20261026d"></script>
 </body>
 </html>
