@@ -26,6 +26,7 @@ const COPY = {
     needPhone: "Գրեք հայաստանյան բջջային համար։",
     badPhone: "Այս հեռախոսահամարով հնարավոր չէ գրանցվել։",
     opensLater: "Հաջորդ օրվա գրանցումը բացվում է ժամը {time}-ին։",
+    slotPassed: "Այս ժամն արդեն անցել է։ Ընտրեք ավելի ուշ ժամ։",
     onlyTomorrow: "Գրանցումը բաց է միայն հաջորդ օրվա համար։ Թարմացրեք էջը։",
     tomorrowOff: "Վաղը աշխատանքային օր չէ։ Ընդունելությունը երկուշաբթիից ուրբաթ է։",
     pickListed: "Ընտրեք ցուցակի ժամերից մեկը։",
@@ -60,6 +61,7 @@ const COPY = {
     needPhone: "Введите армянский мобильный номер.",
     badPhone: "С таким номером телефона записаться нельзя.",
     opensLater: "Запись на следующий день открывается в {time}.",
+    slotPassed: "Это время уже прошло. Выберите более позднее.",
     onlyTomorrow: "Запись открыта только на следующий день. Обновите страницу.",
     tomorrowOff: "Завтра нерабочий день. Приём с понедельника по пятницу.",
     pickListed: "Выберите время из списка.",
@@ -158,6 +160,17 @@ function yerevanHour() {
 
 function bookingWindowOpen() {
   return yerevanHour() >= BOOKING_OPEN_HOUR;
+}
+
+function yerevanMinutes() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const read = (type) => parts.find((part) => part.type === type).value;
+  return `${read("hour")}:${read("minute")}`;
 }
 
 function isWorkingDay(iso) {
@@ -430,10 +443,11 @@ function dayChoices(data, date, ownTime) {
   const taken = new Set(
     data.appointments.filter((item) => item.date === date).map((item) => item.time)
   );
+  const now = date === calendarDate(0) ? yerevanMinutes() : "";
   return SLOTS.map((time) => ({
     time,
     current: time === ownTime,
-    taken: taken.has(time) && time !== ownTime,
+    taken: (taken.has(time) || (Boolean(now) && time <= now)) && time !== ownTime,
   }));
 }
 
@@ -494,29 +508,36 @@ async function sendSms(phone, text) {
 
 function bookingRules(body, lang) {
   const tomorrow = calendarDate(1);
+  const today = calendarDate(0);
   const time = String(body.time || "");
   const date = String(body.date || "");
-  if (!bookingWindowOpen()) {
-    return { error: { status: 409, body: { error: text(lang, "opensLater", { time: bookingOpenLabel() }) } } };
-  }
-  if (date !== tomorrow) {
-    return { error: { status: 409, body: { error: text(lang, "onlyTomorrow") } } };
-  }
-  if (!isWorkingDay(tomorrow)) {
-    return { error: { status: 409, body: { error: text(lang, "tomorrowOff") } } };
-  }
   if (!SLOTS.includes(time)) {
     return { error: { status: 400, body: { error: text(lang, "pickListed"), field: "time" } } };
   }
+  const evening = bookingWindowOpen();
+  if (evening) {
+    if (!isWorkingDay(tomorrow)) {
+      return { error: { status: 409, body: { error: text(lang, "tomorrowOff") } } };
+    }
+    if (date !== tomorrow) {
+      return { error: { status: 409, body: { error: text(lang, "onlyTomorrow") } } };
+    }
+  } else if (date === today && isWorkingDay(today)) {
+    if (time <= yerevanMinutes()) {
+      return { error: { status: 409, body: { error: text(lang, "slotPassed"), field: "time" } } };
+    }
+  } else {
+    return { error: { status: 409, body: { error: text(lang, "opensLater", { time: bookingOpenLabel() }) } } };
+  }
   const person = personFields(body, lang);
   if (person.error) return { error: person.error };
-  return { tomorrow, time, person };
+  return { date: evening ? tomorrow : today, time, person };
 }
 
 async function startBooking(body, lang) {
   const checked = bookingRules(body, lang);
   if (checked.error) return checked.error;
-  const { tomorrow, time, person } = checked;
+  const { date, time, person } = checked;
   const data = await readData();
   if (bookedToday(data, person.phoneKey)) {
     return {
@@ -527,12 +548,12 @@ async function startBooking(body, lang) {
       },
     };
   }
-  if (data.appointments.some((item) => item.date === tomorrow && item.time === time)) {
+  if (data.appointments.some((item) => item.date === date && item.time === time)) {
     return { status: 409, body: { error: text(lang, "slotTaken"), field: "time" } };
   }
   const appointment = {
     id: crypto.randomUUID(),
-    date: tomorrow,
+    date,
     time,
     firstName: person.firstName,
     lastName: person.lastName,
@@ -631,6 +652,9 @@ async function moveMine(body, lang) {
   if (!item) return { status: 404, body: { error: text(lang, "noBooking") } };
   const taken = data.appointments.some((entry) => entry !== item && entry.date === item.date && entry.time === time);
   if (taken) return { status: 409, body: { error: text(lang, "slotTakenMove") } };
+  if (item.date === calendarDate(0) && time <= yerevanMinutes()) {
+    return { status: 409, body: { error: text(lang, "slotPassed"), field: "time" } };
+  }
   item.time = time;
   await writeData(data);
   return {
@@ -727,13 +751,35 @@ app.use((req, res, next) => {
 });
 
 app.get("/api/slots", async (req, res) => {
-  const date = calendarDate(1);
-  const working = isWorkingDay(date);
-  const open = working && bookingWindowOpen();
+  const tomorrow = calendarDate(1);
+  const today = calendarDate(0);
+  const tomorrowWorking = isWorkingDay(tomorrow);
+  const todayWorking = isWorkingDay(today);
+  const evening = bookingWindowOpen();
   const data = await readData();
-  const taken = busyTimes(data, date);
+  const now = yerevanMinutes();
+  if (!evening && todayWorking) {
+    const taken = busyTimes(data, today);
+    const slots = SLOTS.filter((time) => time > now).map((time) => ({ time, taken: taken.has(time) }));
+    if (slots.length) {
+      return res.json({
+        date: today,
+        dateLabel: formatDate(today, req.lang),
+        open: true,
+        sameDay: true,
+        opensAt: "",
+        closedMessage: "",
+        capacity: SLOTS.length,
+        booked: SLOTS.filter((time) => taken.has(time)).length,
+        slots,
+        preview: null,
+      });
+    }
+  }
+  const open = evening && tomorrowWorking;
+  const taken = busyTimes(data, tomorrow);
   let preview = null;
-  if (!working) {
+  if (!tomorrowWorking) {
     const previewDate = nextWorkingDate(0);
     const previewTaken = busyTimes(data, previewDate);
     preview = {
@@ -743,13 +789,14 @@ app.get("/api/slots", async (req, res) => {
     };
   }
   res.json({
-    date,
-    dateLabel: formatDate(date, req.lang),
+    date: tomorrow,
+    dateLabel: formatDate(tomorrow, req.lang),
     open,
-    opensAt: open || !working ? "" : bookingOpenLabel(),
+    sameDay: false,
+    opensAt: open || !tomorrowWorking ? "" : bookingOpenLabel(),
     closedMessage: open
       ? ""
-      : working
+      : tomorrowWorking
         ? text(req.lang, "closedToday", { time: bookingOpenLabel() })
         : text(req.lang, "closedWeekend", { time: bookingOpenLabel() }),
     capacity: SLOTS.length,

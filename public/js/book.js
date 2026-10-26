@@ -82,6 +82,10 @@ function renderSlots() {
       sample: I18N.formatDate(schedule.preview.date),
     });
   }
+  const eyebrow = document.querySelector("#booking-view .eyebrow");
+  if (eyebrow) {
+    eyebrow.textContent = schedule.open && schedule.sameDay && !previewOnly ? I18N.t("todayVisit") : I18N.t("nextVisit");
+  }
   if (!schedule.open && !previewOnly) {
     countNode.textContent = schedule.opensAt ? I18N.t("opensAt", { time: schedule.opensAt }) : I18N.t("noReception");
     legend.hidden = true;
@@ -96,9 +100,11 @@ function renderSlots() {
   const freeCount = slots.filter((slot) => !slot.taken).length;
   countNode.textContent = previewOnly
     ? I18N.t("exampleFree", { count: freeCount })
-    : freeCount
-      ? I18N.t("freeCount", { count: freeCount })
-      : I18N.t("allFull");
+    : schedule.sameDay
+      ? (freeCount ? I18N.t("sameDayFree", { count: freeCount }) : I18N.t("sameDayFull"))
+      : freeCount
+        ? I18N.t("freeCount", { count: freeCount })
+        : I18N.t("allFull");
 
   slots.forEach((slot) => {
     const button = document.createElement("button");
@@ -132,7 +138,7 @@ function renderSlots() {
     chosen.textContent = I18N.t("chosenTime", { time: selectedTime });
     submit.disabled = false;
   }
-  showError(slotsMessage, freeCount || previewOnly ? "" : I18N.t("noSlotsLeft"));
+  showError(slotsMessage, freeCount || previewOnly ? "" : schedule.sameDay ? I18N.t("sameDayFull") : I18N.t("noSlotsLeft"));
 }
 
 async function loadSlots() {
@@ -379,5 +385,5 @@ window.addEventListener("cardiotonus-lang", () => {
 });
 
 setInterval(() => {
-  if (schedule && schedule.opensAt) loadSlots().catch(() => {});
+  if (schedule && (schedule.opensAt || schedule.sameDay)) loadSlots().catch(() => {});
 }, 30000);
