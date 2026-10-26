@@ -661,37 +661,36 @@ h1, h2, p, .lead { overflow-wrap: break-word; }
   box-shadow: var(--shadow);
 }
 .visit-list { display: grid; gap: 10px; }
-.visit-card {
-  display: flex;
-  flex-wrap: wrap;
+.booking-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px 14px;
+  gap: 4px 14px;
   padding: 14px 16px;
   background: var(--white);
   border-radius: 18px;
   box-shadow: var(--shadow);
-}
-.visit-card.row-fresh { animation: row-fresh 2.6s ease; }
-.visit-main { display: flex; align-items: center; gap: 12px; flex: 1 1 220px; min-width: 0; }
-.visit-time {
-  flex: none;
-  min-width: 64px;
-  color: var(--navy);
-  font-size: 18px;
-  font-weight: 800;
-}
-.visit-who { min-width: 0; }
-.visit-name, .visit-phone { margin: 0; overflow-wrap: anywhere; }
-.visit-name { color: var(--navy); font-size: 18px; font-weight: 800; }
-.visit-phone {
-  display: inline-block;
-  margin-top: 2px;
   color: var(--ink);
+}
+.booking-row.row-fresh { animation: row-fresh 2.6s ease; }
+.booking-time {
+  color: #0b1d40;
+  font-size: 20px;
   font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.booking-who { min-width: 0; display: grid; gap: 2px; }
+.booking-name, .booking-phone { margin: 0; overflow-wrap: anywhere; }
+.booking-name { color: var(--navy); font-size: 18px; font-weight: 800; }
+.booking-phone {
+  display: block;
+  color: #17305d;
+  font-weight: 700;
   font-size: 16px;
   text-decoration: none;
 }
-.visit-card .linkish { margin-left: auto; min-height: 44px; padding: 8px 2px 8px 8px; }
+.booking-row .linkish { min-height: 44px; padding: 8px 0 8px 8px; }
 table { width: 100%; border-collapse: collapse; min-width: 0; }
 th, td { text-align: left; padding: 16px 18px; border-bottom: 1px solid var(--line); }
 tr.row-fresh td { animation: row-fresh 2.6s ease; }
@@ -738,8 +737,8 @@ td { font-weight: 700; color: var(--ink); }
   .container { width: min(1140px, calc(100% - 28px)); }
   .page-admin .admin-heart { display: none; }
   .login-card h1 { font-size: 32px; }
-  .visit-card { padding: 12px 14px; }
-  .visit-name { font-size: 17px; }
+  .booking-row { padding: 12px 14px; }
+  .booking-name { font-size: 17px; }
   .header-inner { flex-wrap: wrap; padding: 8px 0; }
   .brand { font-size: 24px; }
   .brand img { width: 56px; height: 56px; }
