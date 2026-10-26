@@ -888,6 +888,7 @@ app.get("/api/admin/appointments", requireAdmin, async (req, res) => {
   const selected = requested === "all" ? "all" : /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : nextWorkingDate(0);
   const visible = selected === "all" ? data : data.filter((item) => item.date === selected);
   const byTime = new Map(visible.map((item) => [item.time, item]));
+  res.setHeader("Cache-Control", "no-store");
   res.json({
     selectedDate: selected,
     dateLabel: selected === "all" ? text(req.lang, "allDays") : formatDate(selected, req.lang),

@@ -28,6 +28,8 @@ const staffError = document.querySelector("#staff-error");
 
 let currentFilter = "";
 let currentData = null;
+let freshIds = new Set();
+let refreshBusy = false;
 
 function showError(node, message) {
   node.hidden = !message;
@@ -57,7 +59,15 @@ function cancelButton(item) {
   return button;
 }
 
+function listStamp(data) {
+  if (!data) return "";
+  return data.appointments
+    .map((item) => [item.id, item.date, item.time, item.firstName, item.lastName, item.phone].join("|"))
+    .join("\n");
+}
+
 function renderSchedule() {
+  const keptTime = staffTime.value;
   schedule.replaceChildren();
   if (!currentData) return;
   const query = searchInput.value.trim();
@@ -88,6 +98,9 @@ function renderSchedule() {
     staffTime.appendChild(option);
   });
   staffForm.querySelector("button").disabled = staffTime.options.length === 0;
+  if (keptTime && [...staffTime.options].some((option) => option.value === keptTime)) {
+    staffTime.value = keptTime;
+  }
 
   empty.hidden = booked.length > 0;
   empty.textContent = query ? I18N.t("emptySearch") : I18N.t("emptyDay");
@@ -126,11 +139,15 @@ function appendPeopleTable(items, includeDate) {
     phone.appendChild(phoneLink(item.phone));
     const action = document.createElement("td");
     action.appendChild(cancelButton(item));
+    if (freshIds.has(item.id)) row.classList.add("row-fresh");
     row.append(time, first, last, phone, action);
     tbody.appendChild(row);
   });
   table.append(thead, tbody);
   schedule.appendChild(table);
+  const freshRow = table.querySelector(".row-fresh");
+  const typing = staffForm.contains(document.activeElement) || document.activeElement === searchInput;
+  if (freshRow && !typing) freshRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 
 function todayIso() {
@@ -144,26 +161,53 @@ function todayIso() {
   return parts;
 }
 
-async function loadAppointments(date) {
+async function loadAppointments(date, options = {}) {
+  const quiet = Boolean(options.quiet);
   currentFilter = date || "";
   const query = date ? `?date=${encodeURIComponent(date)}` : "";
-  const response = await fetch(`/api/admin/appointments${query}`, { credentials: "same-origin" });
+  const response = await fetch(`/api/admin/appointments${query}`, {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
   if (response.status === 401) {
     dashboard.hidden = true;
     loginCard.hidden = false;
+    currentData = null;
+    freshIds = new Set();
     return;
   }
   const data = await response.json();
   if (!response.ok) {
-    showError(adminError, data.error || I18N.t("listFail"));
+    if (!quiet) showError(adminError, data.error || I18N.t("listFail"));
     return;
   }
+  const nextStamp = listStamp(data);
+  if (quiet && currentData && nextStamp === listStamp(currentData) && data.selectedDate === currentData.selectedDate) {
+    return;
+  }
+  const previousIds = quiet && currentData
+    ? new Set(currentData.appointments.map((item) => item.id))
+    : null;
+  freshIds = previousIds
+    ? new Set(data.appointments.filter((item) => !previousIds.has(item.id)).map((item) => item.id))
+    : new Set();
   loginCard.hidden = true;
   dashboard.hidden = false;
   currentData = data;
   title.textContent = data.selectedDate === "all" ? I18N.t("allDays") : I18N.formatDate(data.selectedDate);
-  if (data.selectedDate !== "all") dateInput.value = data.selectedDate;
+  if (data.selectedDate !== "all" && dateInput.value !== data.selectedDate) dateInput.value = data.selectedDate;
   renderSchedule();
+}
+
+async function refreshQuiet() {
+  if (dashboard.hidden || document.hidden || refreshBusy) return;
+  refreshBusy = true;
+  try {
+    await loadAppointments(currentFilter || dateInput.value, { quiet: true });
+  } catch {
+  } finally {
+    refreshBusy = false;
+  }
 }
 
 async function cancelAppointment(item) {
@@ -242,6 +286,11 @@ document.querySelector("#logout").addEventListener("click", async () => {
 
 loadAppointments().catch(() => {
   showError(loginError, I18N.t("network"));
+});
+
+window.setInterval(refreshQuiet, 3000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshQuiet();
 });
 
 window.addEventListener("cardiotonus-lang", () => {

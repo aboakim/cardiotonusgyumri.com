@@ -628,6 +628,11 @@ h1, h2, p, .lead { overflow-wrap: break-word; }
 }
 table { width: 100%; border-collapse: collapse; min-width: 720px; }
 th, td { text-align: left; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+tr.row-fresh td { animation: row-fresh 2.6s ease; }
+@keyframes row-fresh {
+  0% { background: #d7ecff; }
+  100% { background: transparent; }
+}
 th { color: var(--muted); font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; }
 td { font-weight: 700; color: var(--ink); }
 .name-cell { color: var(--navy); font-size: 18px; }
