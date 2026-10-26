@@ -32,6 +32,7 @@ const COPY = {
     pickListed: "Ընտրեք ցուցակի ժամերից մեկը։",
     alreadyToday: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։ Կեսգիշերից հետո կարող եք գրանցվել նորից։ Բացեք «Իմ գրանցումը»՝ չեղարկելու կամ ժամը փոխելու համար։",
     alreadyTodayShort: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։",
+    alreadyOnDate: "Այս հեռախոսահամարով այս օրվա համար արդեն գրանցում կա։ Բացեք «Իմ գրանցումը»՝ չեղարկելու կամ ժամը փոխելու համար։",
     alreadyTodayStaff: "Այս հեռախոսահամարով այսօր արդեն գրանցում կա։ Կեսգիշերից հետո կարող եք գրանցվել նորից։",
     slotTaken: "Այս ժամն արդեն զբաղված է։ Ընտրեք այլ ժամ։",
     slotTakenShort: "Այս ժամն արդեն զբաղված է։",
@@ -67,6 +68,7 @@ const COPY = {
     pickListed: "Выберите время из списка.",
     alreadyToday: "С этим номером сегодня уже есть запись. После полуночи можно записаться снова. Откройте «Моя запись», чтобы отменить или перенести.",
     alreadyTodayShort: "С этим номером сегодня уже есть запись.",
+    alreadyOnDate: "С этим номером на этот день уже есть запись. Откройте «Моя запись», чтобы отменить или перенести.",
     alreadyTodayStaff: "С этим номером сегодня уже есть запись. После полуночи можно записаться снова.",
     slotTaken: "Это время уже занято. Выберите другое.",
     slotTakenShort: "Это время уже занято.",
@@ -169,7 +171,7 @@ function yerevanMinutes() {
     minute: "2-digit",
     hourCycle: "h23",
   }).formatToParts(new Date());
-  const read = (type) => parts.find((part) => part.type === type).value;
+  const read = (type) => parts.find((part) => part.type === type).value.padStart(2, "0");
   return `${read("hour")}:${read("minute")}`;
 }
 
@@ -548,6 +550,9 @@ async function startBooking(body, lang) {
       },
     };
   }
+  if (data.appointments.some((item) => phoneKey(item.phone) === person.phoneKey && item.date === date)) {
+    return { status: 409, body: { error: text(lang, "alreadyOnDate"), field: "phone" } };
+  }
   if (data.appointments.some((item) => item.date === date && item.time === time)) {
     return { status: 409, body: { error: text(lang, "slotTaken"), field: "time" } };
   }
@@ -590,6 +595,11 @@ async function confirmBooking(body, lang) {
     delete data.pending[person.phoneKey];
     await writeData(data);
     return { status: 409, body: { error: text(lang, "alreadyTodayShort"), field: "phone" } };
+  }
+  if (data.appointments.some((item) => phoneKey(item.phone) === person.phoneKey && item.date === hold.date)) {
+    delete data.pending[person.phoneKey];
+    await writeData(data);
+    return { status: 409, body: { error: text(lang, "alreadyOnDate"), field: "phone" } };
   }
   if (data.appointments.some((item) => item.date === hold.date && item.time === hold.time)) {
     delete data.pending[person.phoneKey];
@@ -760,21 +770,19 @@ app.get("/api/slots", async (req, res) => {
   const now = yerevanMinutes();
   if (!evening && todayWorking) {
     const taken = busyTimes(data, today);
-    const slots = SLOTS.filter((time) => time > now).map((time) => ({ time, taken: taken.has(time) }));
-    if (slots.length) {
-      return res.json({
-        date: today,
-        dateLabel: formatDate(today, req.lang),
-        open: true,
-        sameDay: true,
-        opensAt: "",
-        closedMessage: "",
-        capacity: SLOTS.length,
-        booked: SLOTS.filter((time) => taken.has(time)).length,
-        slots,
-        preview: null,
-      });
-    }
+    const slots = SLOTS.map((time) => ({ time, taken: taken.has(time) || time <= now }));
+    return res.json({
+      date: today,
+      dateLabel: formatDate(today, req.lang),
+      open: true,
+      sameDay: true,
+      opensAt: "",
+      closedMessage: "",
+      capacity: SLOTS.length,
+      booked: slots.filter((slot) => slot.taken).length,
+      slots,
+      preview: null,
+    });
   }
   const open = evening && tomorrowWorking;
   const taken = busyTimes(data, tomorrow);

@@ -84,7 +84,9 @@ function renderSlots() {
   }
   const eyebrow = document.querySelector("#booking-view .eyebrow");
   if (eyebrow) {
-    eyebrow.textContent = schedule.open && schedule.sameDay && !previewOnly ? I18N.t("todayVisit") : I18N.t("nextVisit");
+    const visitKey = schedule.open && schedule.sameDay && !previewOnly ? "todayVisit" : "nextVisit";
+    eyebrow.dataset.i18n = visitKey;
+    eyebrow.textContent = I18N.t(visitKey);
   }
   if (!schedule.open && !previewOnly) {
     countNode.textContent = schedule.opensAt ? I18N.t("opensAt", { time: schedule.opensAt }) : I18N.t("noReception");
