@@ -179,6 +179,16 @@ function bookingWindowOpen() {
   return yerevanHour() >= BOOKING_OPEN_HOUR;
 }
 
+function openBooking() {
+  const today = calendarDate(0);
+  const tomorrow = calendarDate(1);
+  if (!bookingWindowOpen() && isWorkingDay(today)) {
+    return { date: today, sameDay: true };
+  }
+  if (isWorkingDay(tomorrow)) return { date: tomorrow, sameDay: false };
+  return { date: nextWorkingDate(1), sameDay: false };
+}
+
 function yerevanMinutes() {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: TZ,
@@ -524,31 +534,21 @@ async function sendSms(phone, text) {
 }
 
 function bookingRules(body, lang) {
-  const tomorrow = calendarDate(1);
-  const today = calendarDate(0);
   const time = String(body.time || "");
   const date = String(body.date || "");
   if (!SLOTS.includes(time)) {
     return { error: { status: 400, body: { error: text(lang, "pickListed"), field: "time" } } };
   }
-  const evening = bookingWindowOpen();
-  if (evening) {
-    if (!isWorkingDay(tomorrow)) {
-      return { error: { status: 409, body: { error: text(lang, "tomorrowOff") } } };
-    }
-    if (date !== tomorrow) {
-      return { error: { status: 409, body: { error: text(lang, "onlyTomorrow") } } };
-    }
-  } else if (date === today && isWorkingDay(today)) {
-    if (time <= yerevanMinutes()) {
-      return { error: { status: 409, body: { error: text(lang, "slotPassed"), field: "time" } } };
-    }
-  } else {
-    return { error: { status: 409, body: { error: text(lang, "opensLater", { time: bookingOpenLabel() }) } } };
+  const target = openBooking();
+  if (normalizeIsoDate(date) !== target.date) {
+    return { error: { status: 409, body: { error: text(lang, "onlyTomorrow") } } };
+  }
+  if (target.sameDay && time <= yerevanMinutes()) {
+    return { error: { status: 409, body: { error: text(lang, "slotPassed"), field: "time" } } };
   }
   const person = personFields(body, lang);
   if (person.error) return { error: person.error };
-  return { date: evening ? tomorrow : today, time, person };
+  return { date: target.date, time, person };
 }
 
 async function startBooking(body, lang) {
@@ -776,56 +776,25 @@ app.use((req, res, next) => {
 });
 
 app.get("/api/slots", async (req, res) => {
-  const tomorrow = calendarDate(1);
-  const today = calendarDate(0);
-  const tomorrowWorking = isWorkingDay(tomorrow);
-  const todayWorking = isWorkingDay(today);
-  const evening = bookingWindowOpen();
+  const target = openBooking();
   const data = await readData();
+  const taken = busyTimes(data, target.date);
   const now = yerevanMinutes();
-  if (!evening && todayWorking) {
-    const taken = busyTimes(data, today);
-    const slots = SLOTS.map((time) => ({ time, taken: taken.has(time) || time <= now }));
-    return res.json({
-      date: today,
-      dateLabel: formatDate(today, req.lang),
-      open: true,
-      sameDay: true,
-      opensAt: "",
-      closedMessage: "",
-      capacity: SLOTS.length,
-      booked: slots.filter((slot) => slot.taken).length,
-      slots,
-      preview: null,
-    });
-  }
-  const open = evening && tomorrowWorking;
-  const taken = busyTimes(data, tomorrow);
-  let preview = null;
-  if (!tomorrowWorking) {
-    const previewDate = nextWorkingDate(0);
-    const previewTaken = busyTimes(data, previewDate);
-    preview = {
-      date: previewDate,
-      dateLabel: formatDate(previewDate, req.lang),
-      slots: SLOTS.map((time) => ({ time, taken: previewTaken.has(time) })),
-    };
-  }
+  const slots = SLOTS.map((time) => ({
+    time,
+    taken: taken.has(time) || (target.sameDay && time <= now),
+  }));
   res.json({
-    date: tomorrow,
-    dateLabel: formatDate(tomorrow, req.lang),
-    open,
-    sameDay: false,
-    opensAt: open || !tomorrowWorking ? "" : bookingOpenLabel(),
-    closedMessage: open
-      ? ""
-      : tomorrowWorking
-        ? text(req.lang, "closedToday", { time: bookingOpenLabel() })
-        : text(req.lang, "closedWeekend", { time: bookingOpenLabel() }),
+    date: target.date,
+    dateLabel: formatDate(target.date, req.lang),
+    open: true,
+    sameDay: target.sameDay,
+    opensAt: "",
+    closedMessage: "",
     capacity: SLOTS.length,
-    booked: open ? taken.size : 0,
-    slots: open ? SLOTS.map((time) => ({ time, taken: taken.has(time) })) : [],
-    preview,
+    booked: slots.filter((slot) => slot.taken).length,
+    slots,
+    preview: null,
   });
 });
 
