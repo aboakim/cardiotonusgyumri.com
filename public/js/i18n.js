@@ -228,8 +228,30 @@ const WEEKDAYS = {
   ru: ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"],
 };
 
+function readCookie(name) {
+  const parts = String(document.cookie || "").split(";");
+  for (let index = 0; index < parts.length; index += 1) {
+    const item = parts[index].replace(/^\s+/, "");
+    if (item.indexOf(`${name}=`) === 0) return decodeURIComponent(item.slice(name.length + 1));
+  }
+  return "";
+}
+
 function currentLang() {
-  return localStorage.getItem("cardiotonus-lang") === "ru" ? "ru" : "hy";
+  try {
+    const stored = localStorage.getItem("cardiotonus-lang");
+    if (stored === "ru" || stored === "hy") return stored;
+  } catch (error) {
+    /* private browsing on old iOS blocks localStorage */
+  }
+  return readCookie("lang") === "ru" ? "ru" : "hy";
+}
+
+function gregorianWeekday(year, month, day) {
+  const offsets = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+  let fullYear = year;
+  if (month < 3) fullYear -= 1;
+  return (fullYear + Math.floor(fullYear / 4) - Math.floor(fullYear / 100) + Math.floor(fullYear / 400) + offsets[month - 1] + day) % 7;
 }
 
 function fill(line, vars) {
@@ -248,12 +270,20 @@ function t(key, vars) {
 }
 
 function formatDate(iso) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ""))) return iso || "";
-  const [year, month, day] = iso.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
+  const match = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return iso || "";
+  let year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year >= 2400) year -= 543;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return iso || "";
   const lang = currentLang();
-  const weekday = WEEKDAYS[lang][date.getUTCDay()];
-  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${day} ${MONTHS[lang][month - 1]} ${year}`;
+  const names = WEEKDAYS[lang] || WEEKDAYS.hy;
+  const months = MONTHS[lang] || MONTHS.hy;
+  const weekday = names[gregorianWeekday(year, month, day)] || "";
+  const monthName = months[month - 1] || "";
+  if (!weekday || !monthName) return `${year}-${month < 10 ? `0${month}` : month}-${day < 10 ? `0${day}` : day}`;
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${day} ${monthName} ${year}`;
 }
 
 function apply() {
@@ -281,7 +311,11 @@ function apply() {
 
 function setLang(lang) {
   const next = lang === "ru" ? "ru" : "hy";
-  localStorage.setItem("cardiotonus-lang", next);
+  try {
+    localStorage.setItem("cardiotonus-lang", next);
+  } catch (error) {
+    /* keep the language in the cookie when storage is blocked */
+  }
   document.cookie = `lang=${next};path=/;max-age=31536000;SameSite=Lax`;
   apply();
   window.dispatchEvent(new CustomEvent("cardiotonus-lang", { detail: next }));

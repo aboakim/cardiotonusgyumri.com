@@ -97,7 +97,7 @@ function renderSchedule() {
     return;
   }
 
-  const canAdd = currentData.workingDay && currentData.selectedDate >= todayIso();
+  const canAdd = currentData.workingDay && serverToday && currentData.selectedDate >= serverToday;
   staffForm.hidden = !canAdd;
   staffNote.textContent = canAdd ? I18N.t("staffOpen") : I18N.t("staffClosed");
   clearNode(staffTime);
@@ -166,31 +166,20 @@ function appendPeopleList(items, includeDate) {
   if (freshRow && !typing) freshRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 
+let serverToday = "";
+
+function pad2(value) {
+  return value < 10 ? `0${value}` : String(value);
+}
+
+function daysInMonth(year, month) {
+  const lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (month === 2 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0)) return 29;
+  return lengths[month - 1] || 0;
+}
+
 function todayIso() {
-  const base = {
-    timeZone: "Asia/Yerevan",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  };
-  let formatter;
-  try {
-    formatter = new Intl.DateTimeFormat("en-US", Object.assign({ calendar: "gregory" }, base));
-  } catch (error) {
-    formatter = new Intl.DateTimeFormat("en-US", base);
-  }
-  const parts = formatter.formatToParts(new Date());
-  const read = (type) => {
-    for (let index = 0; index < parts.length; index += 1) {
-      if (parts[index].type === type) return parts[index].value;
-    }
-    return "";
-  };
-  let year = Number(read("year"));
-  if (year >= 2400) year -= 543;
-  const month = read("month").length < 2 ? `0${read("month")}` : read("month");
-  const day = read("day").length < 2 ? `0${read("day")}` : read("day");
-  return `${year}-${month}-${day}`;
+  return serverToday;
 }
 
 function normalizeIso(value) {
@@ -200,15 +189,34 @@ function normalizeIso(value) {
   const month = Number(match[2]);
   const day = Number(match[3]);
   if (year >= 2400) year -= 543;
-  const check = new Date(Date.UTC(year, month - 1, day));
-  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return "";
-  return check.toISOString().slice(0, 10);
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) return "";
+  return `${year}-${pad2(month)}-${pad2(day)}`;
 }
 
 function shiftIso(iso, days) {
-  const normal = normalizeIso(iso) || todayIso();
-  const [year, month, day] = normal.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+  const normal = normalizeIso(iso) || serverToday;
+  if (!normal) return "";
+  const parts = normal.split("-");
+  let year = Number(parts[0]);
+  let month = Number(parts[1]);
+  let day = Number(parts[2]) + days;
+  while (day > daysInMonth(year, month)) {
+    day -= daysInMonth(year, month);
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+  while (day < 1) {
+    month -= 1;
+    if (month < 1) {
+      month = 12;
+      year -= 1;
+    }
+    day += daysInMonth(year, month);
+  }
+  return `${year}-${pad2(month)}-${pad2(day)}`;
 }
 
 function showDayLabel(selected) {
@@ -243,6 +251,7 @@ async function loadAppointments(date, options = {}) {
     if (!quiet) showError(adminError, data.error || I18N.t("listFail"));
     return;
   }
+  if (data.today) serverToday = data.today;
   const nextStamp = listStamp(data);
   if (quiet && currentData && nextStamp === listStamp(currentData) && data.selectedDate === currentData.selectedDate) {
     return;
@@ -354,7 +363,7 @@ if (logoutButton && loginCard) {
   });
 }
 
-loadAppointments(todayIso()).catch(() => {
+loadAppointments("").catch(() => {
   showError(loginError, I18N.t("network"));
 });
 

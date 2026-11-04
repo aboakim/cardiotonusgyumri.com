@@ -780,9 +780,12 @@ app.get("/api/slots", async (req, res) => {
     time,
     taken: taken.has(time) || (target.sameDay && time <= now),
   }));
+  res.setHeader("Cache-Control", "no-store");
   res.json({
     date: target.date,
     dateLabel: formatDate(target.date, req.lang),
+    today: calendarDate(0),
+    now: now,
     open: true,
     sameDay: target.sameDay,
     opensAt: "",
@@ -870,6 +873,8 @@ app.get("/api/admin/appointments", requireAdmin, async (req, res) => {
   const byTime = new Map(visible.map((item) => [item.time, item]));
   res.setHeader("Cache-Control", "no-store");
   res.json({
+    today: calendarDate(0),
+    now: yerevanMinutes(),
     selectedDate: selected,
     dateLabel: selected === "all" ? text(req.lang, "allDays") : formatDate(selected, req.lang),
     workingDay: selected === "all" ? false : isWorkingDay(selected),

@@ -34,18 +34,25 @@ let draft = null;
 let minePhone = "";
 let otpRequest = null;
 
+function clearNode(node) {
+  if (!node) return;
+  while (node.firstChild) node.removeChild(node.firstChild);
+}
+
 function listenForSmsCode() {
-  if (!("OTPCredential" in window) || !navigator.credentials?.get) return;
-  otpRequest?.abort();
+  const credentials = navigator.credentials;
+  if (!("OTPCredential" in window) || !credentials || !credentials.get) return;
+  if (otpRequest && otpRequest.abort) otpRequest.abort();
   const controller = new AbortController();
   otpRequest = controller;
-  navigator.credentials.get({
+  credentials.get({
     otp: { transport: ["sms"] },
     signal: controller.signal,
   }).then((otp) => {
-    if (!otp?.code || codeForm.hidden) return;
+    if (!otp || !otp.code || !codeForm || codeForm.hidden) return;
     codeForm.code.value = otp.code;
-    codeForm.requestSubmit();
+    if (codeForm.requestSubmit) codeForm.requestSubmit();
+    else codeForm.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
   }).catch(() => {});
 }
 
@@ -69,13 +76,24 @@ function activeSlots() {
   return schedule.slots;
 }
 
+function dateText(iso, fallback) {
+  try {
+    if (iso && window.I18N) return I18N.formatDate(iso);
+  } catch (error) {
+    /* the phone calendar must not block the live schedule */
+  }
+  return fallback || iso || "";
+}
+
 function renderSlots() {
-  grid.replaceChildren();
+  clearNode(grid);
   previewOnly = !schedule.open && Boolean(schedule.preview);
-  const slots = activeSlots();
-  const shownDate = previewOnly ? I18N.formatDate(schedule.preview.date) : I18N.formatDate(schedule.date);
+  const slots = activeSlots() || [];
+  const shownDate = previewOnly && schedule.preview
+    ? dateText(schedule.preview.date, schedule.dateLabel)
+    : dateText(schedule.date, schedule.dateLabel);
   dateNode.textContent = previewOnly ? I18N.t("previewMark", { date: shownDate }) : shownDate;
-  demoBanner.hidden = !previewOnly;
+  if (demoBanner) demoBanner.hidden = !previewOnly;
   if (previewOnly) {
     demoBanner.textContent = I18N.t("demo", {
       tomorrow: I18N.formatDate(schedule.date),
@@ -118,7 +136,8 @@ function renderSlots() {
     time.textContent = slot.time;
     const note = document.createElement("small");
     note.textContent = slot.taken ? I18N.t("busy") : I18N.t("minutes");
-    button.append(time, note);
+    button.appendChild(time);
+    button.appendChild(note);
     button.addEventListener("click", () => {
       selectedTime = slot.time;
       chosen.textContent = I18N.t("chosenTime", { time: slot.time });
@@ -144,9 +163,13 @@ function renderSlots() {
 }
 
 async function loadSlots() {
-  const response = await fetch("/api/slots");
+  const response = await fetch("/api/slots", {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
   if (!response.ok) throw new Error("slots");
   schedule = await response.json();
+  if (dateNode) dateNode.textContent = schedule.dateLabel || schedule.date || "";
   renderSlots();
 }
 
@@ -218,7 +241,14 @@ codeForm.addEventListener("submit", async (event) => {
     const response = await fetch("/api/book/confirm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...draft, code: codeForm.code.value }),
+      body: JSON.stringify({
+      date: draft.date,
+      time: draft.time,
+      firstName: draft.firstName,
+      lastName: draft.lastName,
+      phone: draft.phone,
+      code: codeForm.code.value,
+    }),
     });
     const data = await response.json();
     if (!response.ok) {
@@ -270,7 +300,7 @@ function renderMine(data) {
     date: I18N.formatDate(data.appointment.date),
     time: data.appointment.time,
   });
-  mineSlots.replaceChildren();
+  clearNode(mineSlots);
   data.slots.forEach((slot) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -280,7 +310,8 @@ function renderMine(data) {
     time.textContent = slot.time;
     const note = document.createElement("small");
     note.textContent = slot.current ? I18N.t("yourTime") : slot.taken ? I18N.t("busy") : I18N.t("choose");
-    button.append(time, note);
+    button.appendChild(time);
+    button.appendChild(note);
     if (!slot.taken && !slot.current) {
       button.addEventListener("click", () => moveMine(slot.time));
     }
