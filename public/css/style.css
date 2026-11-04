@@ -423,7 +423,7 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.03em; }
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 220' fill='none'%3E%3Cpath d='M120 196C120 196 28 138 28 78C28 44 54 24 82 24C98 24 112 34 120 50C128 34 142 24 158 24C186 24 212 44 212 78C212 138 120 196 120 196Z' stroke='%231c3e8a' stroke-width='3' opacity='.22'/%3E%3Cpath d='M36 112H74L88 112L102 68L122 156L140 96L154 112H206' stroke='%23d4172c' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' opacity='.7'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 .page > *:not(.admin-heart) { position: relative; z-index: 1; }
-.page:has(.admin-heart)::after { display: none; }
+.page-admin::after { display: none; }
 .admin-heart {
   position: absolute;
   z-index: 0;
@@ -433,11 +433,14 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.03em; }
   height: min(420px, 62vw);
   overflow: visible;
   pointer-events: none;
+  -webkit-transform-origin: center center;
+  transform-origin: center center;
+  -webkit-animation: heart-beat 1.7s ease-in-out infinite;
+  animation: heart-beat 1.7s ease-in-out infinite;
 }
 .admin-heart-beat {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: heart-beat 1.7s ease-in-out infinite;
+  -webkit-transform-origin: center center;
+  transform-origin: center center;
 }
 .admin-heart path:first-child {
   fill: none;
@@ -457,6 +460,12 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.03em; }
   opacity: 0.85;
   stroke-dasharray: 54 210;
   animation: trace-run 1.7s linear infinite;
+}
+@-webkit-keyframes heart-beat {
+  0%, 46%, 100% { -webkit-transform: scale(1); }
+  10% { -webkit-transform: scale(1.045); }
+  18% { -webkit-transform: scale(0.99); }
+  30% { -webkit-transform: scale(1.09); }
 }
 @keyframes heart-beat {
   0%, 46%, 100% { transform: scale(1); }
@@ -732,18 +741,28 @@ td { font-weight: 700; color: var(--ink); }
   .booking-card { position: static; }
   .footer-grid, .dashboard-head { display: grid; }
   .page { padding: 24px 0 48px; }
-  .page-admin .admin-heart { opacity: 0.18; pointer-events: none; }
+  .page-admin .admin-heart {
+    display: block;
+    position: relative;
+    width: 132px;
+    height: 120px;
+    margin: 0 auto;
+    right: auto;
+    top: auto;
+    opacity: 1;
+    z-index: 1;
+    pointer-events: none;
+  }
   .dashboard h1 { font-size: clamp(24px, 7vw, 34px); }
   .day-switch, .search-label, .dash-buttons { width: 100%; }
   .dash-buttons .button { flex: 1 1 auto; }
-  .page::after, .admin-heart { width: 210px; height: 190px; top: 8px; right: -28px; }
+  .page::after { width: 210px; height: 190px; top: 8px; right: -28px; }
   .booking-intro h1 { font-size: clamp(32px, 9vw, 44px); }
   .legend { flex-wrap: wrap; }
 }
 
 @media (max-width: 640px) {
   .container { width: min(1140px, calc(100% - 28px)); }
-  .page-admin .admin-heart { display: none; }
   .login-card h1 { font-size: 32px; }
   .booking-row { padding: 12px 14px; }
   .booking-name { font-size: 17px; }
