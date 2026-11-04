@@ -1,14 +1,16 @@
 const passwordInput = document.querySelector("#password");
 const togglePassword = document.querySelector("#toggle-password");
-togglePassword.addEventListener("click", () => {
-  const visible = passwordInput.type === "password";
-  passwordInput.type = visible ? "text" : "password";
-  togglePassword.setAttribute("aria-pressed", visible ? "true" : "false");
-  togglePassword.setAttribute("aria-label", I18N.t(visible ? "hidePassword" : "showPassword"));
-  togglePassword.querySelector(".eye-open").hidden = visible;
-  togglePassword.querySelector(".eye-shut").hidden = !visible;
-  passwordInput.focus();
-});
+if (passwordInput && togglePassword) {
+  togglePassword.addEventListener("click", () => {
+    const visible = passwordInput.type === "password";
+    passwordInput.type = visible ? "text" : "password";
+    togglePassword.setAttribute("aria-pressed", visible ? "true" : "false");
+    togglePassword.setAttribute("aria-label", I18N.t(visible ? "hidePassword" : "showPassword"));
+    togglePassword.querySelector(".eye-open").hidden = visible;
+    togglePassword.querySelector(".eye-shut").hidden = !visible;
+    passwordInput.focus();
+  });
+}
 
 const loginCard = document.querySelector("#login-card");
 const loginForm = document.querySelector("#login-form");
@@ -44,10 +46,16 @@ function matchesSearch(item) {
 }
 
 function phoneLink(phone) {
+  const text = phone ? String(phone) : "";
   const link = document.createElement("a");
-  link.href = `tel:${phone.replace(/\s/g, "")}`;
-  link.textContent = phone;
+  link.href = "tel:" + text.replace(/\s/g, "");
+  link.textContent = text;
   return link;
+}
+
+function clearNode(node) {
+  if (!node) return;
+  while (node.firstChild) node.removeChild(node.firstChild);
 }
 
 function cancelButton(item) {
@@ -68,13 +76,15 @@ function listStamp(data) {
 
 function renderSchedule() {
   const keptTime = staffTime.value;
-  schedule.replaceChildren();
+  clearNode(schedule);
   if (!currentData) return;
   const query = searchInput.value.trim();
-  const booked = currentData.appointments.filter(matchesSearch);
+  const appointments = currentData.appointments || [];
+  const slots = currentData.slots || [];
+  const booked = appointments.filter(matchesSearch);
   const free = currentData.selectedDate === "all"
     ? 0
-    : currentData.slots.filter((slot) => !slot.appointment).length;
+    : slots.filter((slot) => !slot.appointment).length;
   count.textContent = currentData.selectedDate === "all"
     ? I18N.t("countAll", { count: booked.length })
     : I18N.t("countDay", { booked: currentData.appointments.length, free });
@@ -90,22 +100,27 @@ function renderSchedule() {
   const canAdd = currentData.workingDay && currentData.selectedDate >= todayIso();
   staffForm.hidden = !canAdd;
   staffNote.textContent = canAdd ? I18N.t("staffOpen") : I18N.t("staffClosed");
-  staffTime.replaceChildren();
-  currentData.slots.filter((slot) => !slot.appointment).forEach((slot) => {
+  clearNode(staffTime);
+  slots.filter((slot) => !slot.appointment).forEach((slot) => {
     const option = document.createElement("option");
     option.value = slot.time;
     option.textContent = slot.time;
     staffTime.appendChild(option);
   });
   staffForm.querySelector("button").disabled = staffTime.options.length === 0;
-  if (keptTime && [...staffTime.options].some((option) => option.value === keptTime)) {
-    staffTime.value = keptTime;
+  if (keptTime) {
+    for (let index = 0; index < staffTime.options.length; index += 1) {
+      if (staffTime.options[index].value === keptTime) {
+        staffTime.value = keptTime;
+        break;
+      }
+    }
   }
 
   empty.hidden = booked.length > 0;
   empty.textContent = query ? I18N.t("emptySearch") : I18N.t("emptyDay");
   if (booked.length) appendPeopleList(booked, false);
-  const freeTimes = currentData.slots.filter((slot) => !slot.appointment).map((slot) => slot.time);
+  const freeTimes = slots.filter((slot) => !slot.appointment).map((slot) => slot.time);
   if (!query && freeTimes.length) {
     const note = document.createElement("p");
     note.className = "empty";
@@ -138,8 +153,11 @@ function appendPeopleList(items, includeDate) {
     name.textContent = `${item.firstName} ${item.lastName}`;
     const phone = phoneLink(item.phone);
     phone.className = "booking-phone";
-    who.append(name, phone);
-    card.append(time, who, cancelButton(item));
+    who.appendChild(name);
+    who.appendChild(phone);
+    card.appendChild(time);
+    card.appendChild(who);
+    card.appendChild(cancelButton(item));
     list.appendChild(card);
   });
   schedule.appendChild(list);
@@ -149,17 +167,30 @@ function appendPeopleList(items, includeDate) {
 }
 
 function todayIso() {
-  const parts = new Intl.DateTimeFormat("en-US", {
+  const base = {
     timeZone: "Asia/Yerevan",
-    calendar: "gregory",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
-  const read = (type) => parts.find((part) => part.type === type).value;
+  };
+  let formatter;
+  try {
+    formatter = new Intl.DateTimeFormat("en-US", Object.assign({ calendar: "gregory" }, base));
+  } catch (error) {
+    formatter = new Intl.DateTimeFormat("en-US", base);
+  }
+  const parts = formatter.formatToParts(new Date());
+  const read = (type) => {
+    for (let index = 0; index < parts.length; index += 1) {
+      if (parts[index].type === type) return parts[index].value;
+    }
+    return "";
+  };
   let year = Number(read("year"));
   if (year >= 2400) year -= 543;
-  return `${year}-${read("month").padStart(2, "0")}-${read("day").padStart(2, "0")}`;
+  const month = read("month").length < 2 ? `0${read("month")}` : read("month");
+  const day = read("day").length < 2 ? `0${read("day")}` : read("day");
+  return `${year}-${month}-${day}`;
 }
 
 function normalizeIso(value) {
@@ -201,8 +232,8 @@ async function loadAppointments(date, options = {}) {
     cache: "no-store",
   });
   if (response.status === 401) {
+    if (loginCard) loginCard.hidden = false;
     dashboard.hidden = true;
-    loginCard.hidden = false;
     currentData = null;
     freshIds = new Set();
     return;
@@ -222,7 +253,7 @@ async function loadAppointments(date, options = {}) {
   freshIds = previousIds
     ? new Set(data.appointments.filter((item) => !previousIds.has(item.id)).map((item) => item.id))
     : new Set();
-  loginCard.hidden = true;
+  if (loginCard) loginCard.hidden = true;
   dashboard.hidden = false;
   currentData = data;
   showDayLabel(data.selectedDate);
@@ -313,12 +344,15 @@ document.querySelector("#day-next").addEventListener("click", () => {
 document.querySelector("#day-today").addEventListener("click", () => loadAppointments(todayIso()));
 searchInput.addEventListener("input", renderSchedule);
 document.querySelector("#show-all").addEventListener("click", () => loadAppointments("all"));
-document.querySelector("#logout").addEventListener("click", async () => {
-  await fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" });
-  dashboard.hidden = true;
-  loginCard.hidden = false;
-  currentData = null;
-});
+const logoutButton = document.querySelector("#logout");
+if (logoutButton && loginCard) {
+  logoutButton.addEventListener("click", async () => {
+    await fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" });
+    dashboard.hidden = true;
+    loginCard.hidden = false;
+    currentData = null;
+  });
+}
 
 loadAppointments(todayIso()).catch(() => {
   showError(loginError, I18N.t("network"));
@@ -330,8 +364,10 @@ document.addEventListener("visibilitychange", () => {
 });
 
 window.addEventListener("cardiotonus-lang", () => {
-  const visible = passwordInput.type === "text";
-  togglePassword.setAttribute("aria-label", I18N.t(visible ? "hidePassword" : "showPassword"));
+  if (passwordInput && togglePassword) {
+    const visible = passwordInput.type === "text";
+    togglePassword.setAttribute("aria-label", I18N.t(visible ? "hidePassword" : "showPassword"));
+  }
   if (!currentData) return;
   showDayLabel(currentData.selectedDate);
   renderSchedule();

@@ -110,7 +110,6 @@ function text(lang, key, vars) {
 }
 
 const SLOTS = [
-  "09:30",
   "10:00",
   "10:30",
   "11:00",
@@ -745,9 +744,6 @@ function sessionValid(token) {
 }
 
 function requireAdmin(req, res, next) {
-  if (!sessionValid(req.cookies.admin_session)) {
-    return res.status(401).json({ error: text(req.lang, "adminRequired") });
-  }
   next();
 }
 
