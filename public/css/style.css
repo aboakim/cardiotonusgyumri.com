@@ -708,6 +708,31 @@ h1, h2, p, .lead { overflow-wrap: break-word; }
   text-decoration: none;
 }
 .booking-row .linkish { float: right; min-height: 44px; padding: 8px 0 8px 8px; }
+.booking-row-dated .booking-time {
+  float: none;
+  display: block;
+  width: auto;
+  margin: 0 0 8px;
+  font-size: 16px;
+  line-height: 1.35;
+}
+.booking-row-dated .booking-date,
+.booking-row-dated .booking-hour {
+  display: inline-block;
+  vertical-align: baseline;
+}
+.booking-row-dated .booking-date { margin-right: 10px; }
+.booking-row-dated .booking-who {
+  overflow: visible;
+  clear: both;
+}
+.booking-row-dated .linkish {
+  float: none;
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 10px 0 0;
+}
 table { width: 100%; border-collapse: collapse; min-width: 0; }
 th, td { text-align: left; padding: 16px 18px; border-bottom: 1px solid var(--line); }
 tr.row-fresh td { animation: row-fresh 2.6s ease; }

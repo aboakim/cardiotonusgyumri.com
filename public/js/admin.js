@@ -141,11 +141,22 @@ function appendPeopleList(items, includeDate) {
   list.className = "visit-list";
   items.forEach((item) => {
     const card = document.createElement("article");
-    card.className = "booking-row";
+    card.className = includeDate ? "booking-row booking-row-dated" : "booking-row";
     if (freshIds.has(item.id)) card.classList.add("row-fresh");
     const time = document.createElement("strong");
     time.className = "booking-time";
-    time.textContent = includeDate ? `${shortDate(item.date)} ${item.time}` : item.time;
+    if (includeDate) {
+      const dateLine = document.createElement("span");
+      dateLine.className = "booking-date";
+      dateLine.textContent = shortDate(item.date);
+      const hourLine = document.createElement("span");
+      hourLine.className = "booking-hour";
+      hourLine.textContent = item.time;
+      time.appendChild(dateLine);
+      time.appendChild(hourLine);
+    } else {
+      time.textContent = item.time;
+    }
     const who = document.createElement("div");
     who.className = "booking-who";
     const name = document.createElement("p");
