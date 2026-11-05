@@ -1,7 +1,0 @@
-/* TEAM */
-Հիմնադիր և ստեղծող: Ալբերտ Ակիմյան
-Founder and creator: Albert Akimyan
-
-/* SITE */
-Site: https://www.cardiotonusgyumri.com/
-Language: Armenian
