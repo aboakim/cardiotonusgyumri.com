@@ -13,9 +13,13 @@
   <meta name="apple-mobile-web-app-title" content="Cardiotonus">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="format-detection" content="telephone=no">
-  <link rel="icon" href="/images/logo.png">
-  <link rel="apple-touch-icon" href="/images/logo.png">
-  <link rel="manifest" href="/manifest.json">
+  <meta name="msapplication-TileColor" content="#e4f2fb">
+  <meta name="msapplication-TileImage" content="/images/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/images/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/images/icon-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json?v=20261106">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -146,6 +150,13 @@
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
   </script>
   <script defer src="/_vercel/insights/script.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      });
+    }
+  </script>
   <script src="/js/i18n.js?v=20261104b"></script>
   <script src="/js/book.js?v=20261104b"></script>
 </body>
