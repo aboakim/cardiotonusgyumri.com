@@ -144,6 +144,32 @@
         </div>
       </div>
       <p data-i18n="footerNote">Չեղարկելու կամ ժամը փոխելու համար բացեք «Իմ գրանցումը»։</p>
+      <section class="install-guide" id="install-guide" aria-labelledby="install-title">
+        <h2 id="install-title" data-i18n="installTitle">Ինչպես պահել կայքը հեռախոսում</h2>
+        <p class="install-lead" data-i18n="installLead">Հեռախոսի էկրանին պահելուց հետո կայքը բացվում է ինչպես հավելված։ Ընտրեք ձեր հեռախոսի քայլերը։</p>
+        <div class="install-panels">
+          <article class="install-panel" data-os="ios">
+            <h3 data-i18n="installIosTitle">iPhone · iOS</h3>
+            <p class="install-browser" data-i18n="installIosBrowser">Safari բրաուզերով</p>
+            <ol>
+              <li data-i18n="installIos1">Բացեք այս կայքը Safari-ով։</li>
+              <li data-i18n="installIos2">Սեղմեք ներքևի «Կիսվել» կոճակը։</li>
+              <li data-i18n="installIos3">Ցանկում ընտրեք «Ավելացնել Հիմնական էկրանին»։</li>
+              <li data-i18n="installIos4">Սեղմեք «Ավելացնել»։</li>
+            </ol>
+          </article>
+          <article class="install-panel" data-os="android">
+            <h3 data-i18n="installAndroidTitle">Android</h3>
+            <p class="install-browser" data-i18n="installAndroidBrowser">Chrome կամ այլ բրաուզերով</p>
+            <ol>
+              <li data-i18n="installAndroid1">Բացեք այս կայքը Chrome-ով։</li>
+              <li data-i18n="installAndroid2">Սեղմեք վերևի աջում երեք կետերը։</li>
+              <li data-i18n="installAndroid3">Ընտրեք «Ավելացնել հիմնական էկրանին» կամ «Տեղադրել հավելվածը»։</li>
+              <li data-i18n="installAndroid4">Հաստատեք պահելը։</li>
+            </ol>
+          </article>
+        </div>
+      </section>
     </div>
   </footer>
   <script>
@@ -156,8 +182,21 @@
         navigator.serviceWorker.register("/sw.js").catch(function () {});
       });
     }
+    (function () {
+      var guide = document.getElementById("install-guide");
+      if (!guide) return;
+      var ua = navigator.userAgent || "";
+      var ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      var android = /Android/i.test(ua);
+      var panels = guide.querySelector(".install-panels");
+      var match = ios ? guide.querySelector('[data-os="ios"]') : android ? guide.querySelector('[data-os="android"]') : null;
+      if (match && panels) {
+        match.className += " is-device";
+        panels.insertBefore(match, panels.firstChild);
+      }
+    })();
   </script>
-  <script src="/js/i18n.js?v=20261104b"></script>
+  <script src="/js/i18n.js?v=20261112"></script>
   <script src="/js/book.js?v=20261104b"></script>
 </body>
 </html>

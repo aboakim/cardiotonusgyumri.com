@@ -388,6 +388,65 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.03em; }
   padding: 6px 0;
 }
 .site-footer a { color: var(--navy); font-weight: 700; }
+.install-guide { display: none; }
+.install-guide h2 {
+  margin: 0 0 8px;
+  color: var(--navy);
+  font-size: 22px;
+  line-height: 1.25;
+}
+.install-lead {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.install-panels { display: block; }
+.install-panel {
+  margin: 0 0 12px;
+  padding: 14px 14px 12px;
+  border: 1px solid rgba(28, 62, 138, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+.install-panel:last-child { margin-bottom: 0; }
+.install-panel.is-device {
+  border-color: rgba(28, 62, 138, 0.32);
+  background: #fff;
+}
+.install-panel h3 {
+  margin: 0 0 4px;
+  color: var(--navy);
+  font-size: 17px;
+}
+.install-browser {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.install-panel ol {
+  margin: 0;
+  padding: 0 0 0 20px;
+}
+.install-panel li {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.install-panel li:last-child { margin-bottom: 0; }
+@media (max-width: 900px) {
+  .footer-grid {
+    display: block;
+  }
+  .install-guide {
+    display: block;
+    width: 100%;
+    margin-top: 22px;
+  }
+}
 
 .page {
   position: relative;
