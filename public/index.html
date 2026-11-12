@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=20261112">
+  <link rel="stylesheet" href="/css/style.css?v=20261112b">
 </head>
 <body>
   <header class="site-header">
@@ -153,9 +153,31 @@
             <p class="install-browser" data-i18n="installIosBrowser">Safari բրաուզերով</p>
             <ol>
               <li data-i18n="installIos1">Բացեք այս կայքը Safari-ով։</li>
-              <li data-i18n="installIos2">Սեղմեք ներքևի «Կիսվել» կոճակը։</li>
-              <li data-i18n="installIos3">Ցանկում ընտրեք «Ավելացնել Հիմնական էկրանին»։</li>
-              <li data-i18n="installIos4">Սեղմեք «Ավելացնել»։</li>
+              <li>
+                <span data-i18n="installIos2a">Սեղմեք ներքևի</span>
+                <span class="install-icon" aria-hidden="true" title="Share">
+                  <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M8 7l4-4 4 4"></path>
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path>
+                  </svg>
+                </span>
+                <span data-i18n="installIos2b">կոճակը։</span>
+              </li>
+              <li>
+                <span data-i18n="installIos3a">Ցանկում ընտրեք</span>
+                <span class="install-icon" aria-hidden="true" title="Add to Home Screen">
+                  <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
+                    <rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 8v8M8 12h8"></path>
+                  </svg>
+                </span>
+                <span data-i18n="installIos3b">։</span>
+              </li>
+              <li>
+                <span data-i18n="installIos4a">Սեղմեք</span>
+                <span class="install-chip" aria-hidden="true">+</span>
+                <span data-i18n="installIos4b">։</span>
+              </li>
             </ol>
           </article>
           <article class="install-panel" data-os="android">
@@ -163,8 +185,34 @@
             <p class="install-browser" data-i18n="installAndroidBrowser">Chrome կամ այլ բրաուզերով</p>
             <ol>
               <li data-i18n="installAndroid1">Բացեք այս կայքը Chrome-ով։</li>
-              <li data-i18n="installAndroid2">Սեղմեք վերևի աջում երեք կետերը։</li>
-              <li data-i18n="installAndroid3">Ընտրեք «Ավելացնել հիմնական էկրանին» կամ «Տեղադրել հավելվածը»։</li>
+              <li>
+                <span data-i18n="installAndroid2a">Սեղմեք վերևի աջում</span>
+                <span class="install-icon install-icon-menu" aria-hidden="true" title="Menu">
+                  <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
+                    <circle cx="12" cy="5" r="1.8" fill="currentColor"></circle>
+                    <circle cx="12" cy="12" r="1.8" fill="currentColor"></circle>
+                    <circle cx="12" cy="19" r="1.8" fill="currentColor"></circle>
+                  </svg>
+                </span>
+                <span data-i18n="installAndroid2b">։</span>
+              </li>
+              <li>
+                <span data-i18n="installAndroid3a">Ընտրեք</span>
+                <span class="install-icon" aria-hidden="true" title="Add to Home screen">
+                  <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V11z"></path>
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M17 4v5M14.5 6.5H19.5"></path>
+                  </svg>
+                </span>
+                <span data-i18n="installAndroid3b">կամ</span>
+                <span class="install-icon" aria-hidden="true" title="Install app">
+                  <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
+                    <rect x="6" y="3" width="12" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 8v7M9 12l3 3 3-3"></path>
+                  </svg>
+                </span>
+                <span data-i18n="installAndroid3c">։</span>
+              </li>
               <li data-i18n="installAndroid4">Հաստատեք պահելը։</li>
             </ol>
           </article>
@@ -196,7 +244,7 @@
       }
     })();
   </script>
-  <script src="/js/i18n.js?v=20261112"></script>
+  <script src="/js/i18n.js?v=20261112b"></script>
   <script src="/js/book.js?v=20261104b"></script>
 </body>
 </html>
